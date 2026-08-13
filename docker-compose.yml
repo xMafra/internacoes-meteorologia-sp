@@ -1,0 +1,27 @@
+# Este arquivo define o ambiente Docker inicial do TCC.
+# Nesta etapa, será disponibilizado um ambiente com Spark/PySpark
+# e Jupyter para desenvolvimento e testes do pipeline.
+# O Airflow será adicionado posteriormente, quando o pipeline Spark
+# estiver funcionando.
+
+services:
+
+  spark:
+    image: jupyter/pyspark-notebook:spark-3.5.0
+
+    container_name: tcc-spark
+
+    command: start-notebook.py --ServerApp.token=''
+
+    ports:
+      - "8888:8888"
+
+    volumes:
+      - ./notebooks:/home/jovyan/work/notebooks
+      - ./src:/home/jovyan/work/src
+      - ./data:/home/jovyan/work/data
+
+    working_dir: /home/jovyan/work
+
+    environment:
+      - JUPYTER_ENABLE_LAB=yes

@@ -1,0 +1,89 @@
+# ==============================
+# DADOS DO PIPELINE
+# ==============================
+
+# Dados brutos e processados
+data/
+
+# Arquivos de dados comuns
+*.csv
+*.csv.gz
+*.json
+*.json.gz
+*.parquet
+*.parquet.gz
+*.dbc
+*.zip
+*.gz
+
+
+# ==============================
+# PYTHON
+# ==============================
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ambientes virtuais
+.venv/
+venv/
+env/
+ENV/
+
+
+# ==============================
+# JUPYTER
+# ==============================
+
+.ipynb_checkpoints/
+
+
+# ==============================
+# CONFIGURAÇÕES E SEGREDOS
+# ==============================
+
+.env
+.env.*
+!.env.example
+
+
+# ==============================
+# LOGS
+# ==============================
+
+*.log
+logs/
+
+
+# ==============================
+# SISTEMAS OPERACIONAIS
+# ==============================
+
+.DS_Store
+Thumbs.db
+
+
+# ==============================
+# IDEs / EDITORES
+# ==============================
+
+.vscode/
+.idea/
+
+
+# ==============================
+# SPARK
+# ==============================
+
+spark-warehouse/
+metastore_db/
+
+
+# ==============================
+# AIRFLOW
+# ==============================
+
+airflow/logs/
+airflow/airflow.db
+airflow/airflow.cfg
