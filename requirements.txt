@@ -1,1 +1,5 @@
-pysus==2.7.0
+numpy<2
+pandas==2.1.4
+pyarrow==14.0.2
+pyreaddbc==2.0.4
+dbfread==2.0.7
