@@ -13,6 +13,11 @@ from pyspark.sql.types import (
     StringType,
     DoubleType,
 )
+from pyspark.sql.functions import (
+    col,
+    substring,
+    trim,
+)
 
 
 # ============================================================
@@ -176,12 +181,13 @@ def ler_dbf_ibge(caminho_zip):
 
 
 # ============================================================
-# LEITURA DOS CENTRÓIDES DO SHAPEFILE
+# LEITURA DAS COORDENADAS DO SHAPEFILE
 # ============================================================
 
 def ler_centroides_ibge(caminho_zip):
     """
-    Extrai o SHP do IBGE e calcula o centróide de cada município.
+    Extrai o SHP do IBGE e obtém uma coordenada
+    representativa de cada município.
 
     Retorna:
 
@@ -190,8 +196,16 @@ def ler_centroides_ibge(caminho_zip):
         longitude
 
     IMPORTANTE:
-    O shapefile está em coordenadas geográficas (graus),
-    portanto longitude = X e latitude = Y.
+
+    O shapefile está em coordenadas geográficas.
+    Portanto:
+
+        X = longitude
+        Y = latitude
+
+    Nenhum cálculo de distância é realizado nesta camada.
+    O cálculo de distância será realizado posteriormente
+    na camada Gold.
     """
 
     diretorio_temp = tempfile.mkdtemp(
@@ -264,12 +278,24 @@ def ler_centroides_ibge(caminho_zip):
             shape = shape_record.shape
 
             # ------------------------------------------------
-            # Cálculo do centróide
+            # COORDENADA REPRESENTATIVA DO MUNICÍPIO
+            # ------------------------------------------------
+            #
+            # Calculamos a média das coordenadas dos vértices
+            # da geometria.
+            #
+            # X = longitude
+            # Y = latitude
+            #
+            # IMPORTANTE:
+            # isso NÃO é cálculo de distância.
+            # A distância será calculada somente na Gold.
             # ------------------------------------------------
 
             pontos = shape.points
 
             if not pontos:
+
                 latitude = None
                 longitude = None
 
@@ -287,8 +313,13 @@ def ler_centroides_ibge(caminho_zip):
 
                 quantidade = len(pontos)
 
-                longitude = soma_x / quantidade
-                latitude = soma_y / quantidade
+                longitude = (
+                    soma_x / quantidade
+                )
+
+                latitude = (
+                    soma_y / quantidade
+                )
 
             registros.append(
                 {
@@ -337,15 +368,15 @@ def processar_ibge(
     )
 
     # --------------------------------------------------------
-    # Leitura dos centróides
+    # Leitura das coordenadas
     # --------------------------------------------------------
 
-    centroides = ler_centroides_ibge(
+    coordenadas = ler_centroides_ibge(
         caminho_bronze
     )
 
     print(
-        f"Municípios com centróide: {len(centroides)}"
+        f"Municípios com coordenadas: {len(coordenadas)}"
     )
 
     # --------------------------------------------------------
@@ -386,10 +417,10 @@ def processar_ibge(
     )
 
     # --------------------------------------------------------
-    # Schema dos centróides
+    # Schema das coordenadas
     # --------------------------------------------------------
 
-    schema_centroides = StructType(
+    schema_coordenadas = StructType(
         [
             StructField(
                 "CD_MUN",
@@ -411,20 +442,14 @@ def processar_ibge(
         ]
     )
 
-    df_centroides = spark.createDataFrame(
-        centroides,
-        schema=schema_centroides
+    df_coordenadas = spark.createDataFrame(
+        coordenadas,
+        schema=schema_coordenadas
     )
 
     # --------------------------------------------------------
     # Padronização
     # --------------------------------------------------------
-
-    from pyspark.sql.functions import (
-        col,
-        substring,
-        trim,
-    )
 
     df = (
         df
@@ -454,8 +479,8 @@ def processar_ibge(
         )
     )
 
-    df_centroides = (
-        df_centroides
+    df_coordenadas = (
+        df_coordenadas
 
         .withColumn(
             "CD_MUN",
@@ -469,11 +494,13 @@ def processar_ibge(
 
     df = (
         df
+
         .join(
-            df_centroides,
+            df_coordenadas,
             on="CD_MUN",
             how="left"
         )
+
         .select(
             "CD_MUN",
             "CD_MUN_6",
