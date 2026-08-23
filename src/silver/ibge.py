@@ -235,11 +235,30 @@ def ler_centroides_ibge(caminho_zip):
                 )
 
             nome_shp = shp_files[0]
+            nome_base, _ = os.path.splitext(nome_shp)
 
-            zip_ref.extract(
-                nome_shp,
-                diretorio_temp
-            )
+            # Um Shapefile nÃ£o Ã© composto apenas pelo arquivo .shp. O
+            # pyshp precisa tambÃ©m do Ã­ndice (.shx) e da tabela de atributos
+            # (.dbf) com o mesmo nome-base para abrir os registros.
+            arquivos_shape = [
+                f"{nome_base}{extensao}"
+                for extensao in (".shp", ".shx", ".dbf")
+            ]
+
+            arquivos_ausentes = [
+                arquivo
+                for arquivo in arquivos_shape
+                if arquivo not in nomes
+            ]
+
+            if arquivos_ausentes:
+                raise FileNotFoundError(
+                    "Arquivos obrigatÃ³rios do Shapefile ausentes no ZIP: "
+                    f"{arquivos_ausentes}"
+                )
+
+            for arquivo in arquivos_shape:
+                zip_ref.extract(arquivo, diretorio_temp)
 
         caminho_shp = os.path.join(
             diretorio_temp,
