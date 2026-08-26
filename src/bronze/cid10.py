@@ -1,5 +1,5 @@
 from pathlib import Path
-from zipfile import ZipFile, BadZipFile
+from zipfile import ZipFile
 
 
 # ============================================================
@@ -53,40 +53,6 @@ def obter_caminho_zip() -> Path:
 
 
 # ============================================================
-# VALIDAÇÃO DO ZIP
-# ============================================================
-
-def validar_arquivo_zip(caminho_zip: Path) -> None:
-    """
-    Verifica se o arquivo existe e se é um ZIP válido.
-    """
-
-    if not caminho_zip.exists():
-        raise FileNotFoundError(
-            f"Arquivo não encontrado: {caminho_zip}"
-        )
-
-    if not caminho_zip.is_file():
-        raise ValueError(
-            f"O caminho informado não é um arquivo: {caminho_zip}"
-        )
-
-    try:
-        with ZipFile(caminho_zip, "r") as zip_ref:
-
-            if zip_ref.testzip() is not None:
-                raise ValueError(
-                    "O arquivo ZIP possui algum arquivo corrompido."
-                )
-
-    except BadZipFile as erro:
-
-        raise ValueError(
-            f"O arquivo não é um ZIP válido: {caminho_zip}"
-        ) from erro
-
-
-# ============================================================
 # EXTRAÇÃO
 # ============================================================
 
@@ -98,10 +64,6 @@ def extrair_cid10(caminho_zip: Path, diretorio_saida: Path) -> list[Path]:
 
     data/bronze/cid10/
     """
-
-    print("Validando arquivo ZIP...")
-
-    validar_arquivo_zip(caminho_zip)
 
     print(f"Arquivo encontrado: {caminho_zip}")
     print(f"Tamanho: {caminho_zip.stat().st_size / 1024:.2f} KB")
@@ -161,43 +123,6 @@ def extrair_cid10(caminho_zip: Path, diretorio_saida: Path) -> list[Path]:
 
 
 # ============================================================
-# VALIDAÇÃO DOS ARQUIVOS EXTRAÍDOS
-# ============================================================
-
-def validar_arquivos_extraidos(
-    arquivos: list[Path],
-) -> None:
-    """
-    Verifica se todos os arquivos esperados foram extraídos
-    corretamente.
-    """
-
-    print()
-    print("=" * 70)
-    print("VALIDAÇÃO DOS ARQUIVOS EXTRAÍDOS")
-    print("=" * 70)
-
-    for arquivo in arquivos:
-
-        if not arquivo.exists():
-            raise FileNotFoundError(
-                f"Arquivo não encontrado após extração: {arquivo}"
-            )
-
-        tamanho = arquivo.stat().st_size
-
-        if tamanho == 0:
-            raise ValueError(
-                f"Arquivo vazio após extração: {arquivo}"
-            )
-
-        print(
-            f"{arquivo.name}: "
-            f"{tamanho / 1024:.2f} KB"
-        )
-
-
-# ============================================================
 # PROCESSAMENTO
 # ============================================================
 
@@ -220,10 +145,6 @@ def processar_cid10() -> list[Path]:
     arquivos_extraidos = extrair_cid10(
         caminho_zip=caminho_zip,
         diretorio_saida=diretorio_bronze,
-    )
-
-    validar_arquivos_extraidos(
-        arquivos_extraidos
     )
 
     print()
