@@ -54,3 +54,31 @@ As verificações cobrem chegada e quantidade esperada, arquivos vazios,
 integridade e legibilidade do formato, estrutura técnica mínima, coerência do
 período, conteúdo duplicado e arquivos temporários de downloads interrompidos.
 Não são aplicadas regras de negócio ou de qualidade analítica na Bronze.
+
+## Data quality da camada Silver
+
+As regras estruturais e analíticas da Silver ficam em `src/quality/silver`,
+com parâmetros centralizados em `quality_config.py` e validadores Spark
+reutilizáveis em `src/common/validators.py`. Falhas `ERROR` encerram o processo;
+`WARNING` e métricas `INFO` são reportados sem bloquear a Gold.
+
+```bash
+spark-submit src/quality/silver/dq_sih.py
+spark-submit src/quality/silver/dq_ibge.py
+spark-submit src/quality/silver/dq_cid10.py
+spark-submit src/quality/silver/dq_inmet.py
+spark-submit src/quality/silver/dq_inmet_diario.py
+```
+
+## Data quality da camada Gold
+
+Os controles de integração, cardinalidade e significado analítico ficam em
+`src/quality/gold`. Os limiares e volumes esperados estão centralizados em
+`quality_config.py`; cobertura meteorológica é reportada separadamente das
+falhas críticas.
+
+```bash
+spark-submit src/quality/gold/dq_municipio_estacao.py
+spark-submit src/quality/gold/dq_fato_internacao.py
+spark-submit src/quality/gold/dq_fato_internacao_meteorologia.py
+```

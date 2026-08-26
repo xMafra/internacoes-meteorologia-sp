@@ -532,13 +532,6 @@ def processar_ano(
         f"{len(arquivos)}"
     )
 
-    if len(arquivos) != 40:
-        raise ValueError(
-            f"Esperadas 40 estações de SP em "
-            f"{ano}, mas foram encontradas "
-            f"{len(arquivos)}."
-        )
-
     diretorio_temp = tempfile.mkdtemp(
         prefix=f"inmet_{ano}_"
     )
@@ -613,94 +606,6 @@ def processar_ano(
         total = df.count()
 
         # ----------------------------------------------------
-        # Validações
-        # ----------------------------------------------------
-
-        estacoes = (
-            df
-            .select("codigo_estacao")
-            .distinct()
-            .count()
-        )
-
-        sem_data = (
-            df
-            .filter(
-                col("data_hora_utc").isNull()
-            )
-            .count()
-        )
-
-        sem_codigo = (
-            df
-            .filter(
-                col("codigo_estacao").isNull()
-                | (
-                    trim(
-                        col("codigo_estacao")
-                    ) == ""
-                )
-            )
-            .count()
-        )
-
-        sem_latitude = (
-            df
-            .filter(
-                col("latitude").isNull()
-            )
-            .count()
-        )
-
-        sem_longitude = (
-            df
-            .filter(
-                col("longitude").isNull()
-            )
-            .count()
-        )
-
-        ufs = [
-            row["uf"]
-            for row in (
-                df
-                .select("uf")
-                .distinct()
-                .orderBy("uf")
-                .collect()
-            )
-        ]
-
-        data_min = (
-            df
-            .selectExpr(
-                "min(data_hora_utc) as data_min"
-            )
-            .collect()[0]["data_min"]
-        )
-
-        data_max = (
-            df
-            .selectExpr(
-                "max(data_hora_utc) as data_max"
-            )
-            .collect()[0]["data_max"]
-        )
-
-        duplicados = (
-            df
-            .groupBy(
-                "codigo_estacao",
-                "data_hora_utc"
-            )
-            .count()
-            .filter(
-                col("count") > 1
-            )
-            .count()
-        )
-
-        # ----------------------------------------------------
         # Resumo
         # ----------------------------------------------------
 
@@ -709,73 +614,7 @@ def processar_ano(
         print(f"RESUMO SILVER INMET {ano}")
         print("=" * 70)
         print(f"Registros: {total}")
-        print(f"Estações distintas: {estacoes}")
-        print(f"UFs: {ufs}")
-        print(f"Data mínima: {data_min}")
-        print(f"Data máxima: {data_max}")
-        print(f"Sem data/hora: {sem_data}")
-        print(
-            f"Sem código da estação: "
-            f"{sem_codigo}"
-        )
-        print(
-            f"Sem latitude: "
-            f"{sem_latitude}"
-        )
-        print(
-            f"Sem longitude: "
-            f"{sem_longitude}"
-        )
-        print(
-            f"Duplicidades estação/data: "
-            f"{duplicados}"
-        )
         print("=" * 70)
-
-        # ----------------------------------------------------
-        # Validações obrigatórias
-        # ----------------------------------------------------
-
-        if estacoes != 40:
-            raise ValueError(
-                f"Esperadas 40 estações, "
-                f"encontradas {estacoes}."
-            )
-
-        if sem_data > 0:
-            raise ValueError(
-                f"Existem {sem_data} registros "
-                f"sem data/hora."
-            )
-
-        if sem_codigo > 0:
-            raise ValueError(
-                f"Existem {sem_codigo} registros "
-                f"sem código da estação."
-            )
-
-        if sem_latitude > 0:
-            raise ValueError(
-                f"Existem {sem_latitude} registros "
-                f"sem latitude."
-            )
-
-        if sem_longitude > 0:
-            raise ValueError(
-                f"Existem {sem_longitude} registros "
-                f"sem longitude."
-            )
-
-        if ufs != ["SP"]:
-            raise ValueError(
-                f"UFs inesperadas: {ufs}"
-            )
-
-        if duplicados > 0:
-            raise ValueError(
-                f"Foram encontradas "
-                f"{duplicados} duplicidades."
-            )
 
         # ----------------------------------------------------
         # Escrever Silver

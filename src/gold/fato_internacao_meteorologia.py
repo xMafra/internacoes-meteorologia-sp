@@ -72,11 +72,6 @@ GOLD_FATO_INTERNACAO_METEOROLOGIA = (
 )
 
 
-# Valores esperados do conjunto congelado do TCC
-TOTAL_INTERNACOES_ESPERADO = 8_409_047
-TOTAL_INMET_DIARIO_ESPERADO = 43_840
-TOTAL_ESTACOES_ESPERADO = 40
-
 DATA_INICIO = "2023-01-01"
 DATA_FIM = "2025-12-31"
 
@@ -203,21 +198,6 @@ total_fato = (
 print(
     f"Registros na fato_internacao: "
     f"{total_fato}"
-)
-
-
-if total_fato != TOTAL_INTERNACOES_ESPERADO:
-
-    raise ValueError(
-        "Quantidade inesperada de registros "
-        "na Gold fato_internacao. "
-        f"Encontrado: {total_fato}. "
-        f"Esperado: {TOTAL_INTERNACOES_ESPERADO}."
-    )
-
-
-print(
-    "✓ Quantidade da fato_internacao validada."
 )
 
 
@@ -542,31 +522,6 @@ print(
 print(
     f"Estações INMET Diário: "
     f"{total_estacoes_inmet}"
-)
-
-
-if total_inmet != TOTAL_INMET_DIARIO_ESPERADO:
-
-    raise ValueError(
-        "Quantidade inesperada de registros "
-        "na Silver INMET Diário. "
-        f"Encontrado: {total_inmet}. "
-        f"Esperado: {TOTAL_INMET_DIARIO_ESPERADO}."
-    )
-
-
-if total_estacoes_inmet != TOTAL_ESTACOES_ESPERADO:
-
-    raise ValueError(
-        "Quantidade inesperada de estações "
-        "na Silver INMET Diário. "
-        f"Encontrado: {total_estacoes_inmet}. "
-        f"Esperado: {TOTAL_ESTACOES_ESPERADO}."
-    )
-
-
-print(
-    "✓ Silver INMET Diário validada."
 )
 
 
@@ -1764,13 +1719,13 @@ print(
 )
 
 
-if total_gravado != TOTAL_INTERNACOES_ESPERADO:
+if total_gravado != total_fato:
 
     raise ValueError(
         "Quantidade gravada diferente "
-        "da quantidade esperada. "
+        "da quantidade produzida. "
         f"Encontrado: {total_gravado}. "
-        f"Esperado: {TOTAL_INTERNACOES_ESPERADO}."
+        f"Produzido: {total_fato}."
     )
 
 
