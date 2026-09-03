@@ -22,6 +22,7 @@ services:
       - ./notebooks:/home/jovyan/work/notebooks
       - ./src:/home/jovyan/work/src
       - ./data:/home/jovyan/work/data
+      - ./docs:/home/jovyan/work/docs
 
     working_dir: /home/jovyan/work
 
