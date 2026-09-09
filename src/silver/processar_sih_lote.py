@@ -2,46 +2,62 @@ import sys
 
 from pyspark.sql import SparkSession
 
+
+# ============================================================
+# CONFIGURAÇÃO DO PYTHON PATH
+# ============================================================
+
 sys.path.insert(
     0,
     "/home/jovyan/work",
 )
 
+
+# ============================================================
+# IMPORTS DO PROJETO
+# ============================================================
+
 from src.silver.sih import criar_spark, processar_sih
 
 
+# ============================================================
+# PERÍODOS DO PIPELINE
+# ============================================================
+
 def obter_periodos() -> list[tuple[int, int]]:
     """
-    Retorna os períodos que ainda precisam ser processados.
+    Retorna todas as competências do SIH utilizadas no TCC.
 
-    Janeiro, fevereiro e março de 2023 já foram processados
-    e validados anteriormente.
+    Período oficial:
+        janeiro/2023 até dezembro/2025
+
+    Total esperado:
+        36 competências
     """
 
-    periodos = (
-        [
-            (2023, mes)
-            for mes in range(4, 13)
-        ]
-        + [
-            (ano, mes)
-            for ano in range(2024, 2026)
-            for mes in range(1, 13)
-        ]
-    )
+    return [
+        (ano, mes)
+        for ano in range(2023, 2026)
+        for mes in range(1, 13)
+    ]
 
-    return periodos
 
+# ============================================================
+# PROCESSAMENTO EM LOTE
+# ============================================================
 
 def processar_lote(
     spark: SparkSession,
     periodos: list[tuple[int, int]],
 ) -> None:
     """
-    Processa todos os períodos informados.
+    Processa todas as competências informadas.
 
-    Um erro em determinado mês não interrompe os períodos
-    seguintes.
+    Caso um período apresente erro, os demais continuam sendo
+    processados.
+
+    Ao final, se pelo menos um período tiver falhado, uma exceção
+    é lançada para que o Airflow marque a task como FAILED.
     """
 
     sucessos = []
@@ -53,13 +69,21 @@ def processar_lote(
     print("=" * 70)
     print("PROCESSAMENTO EM LOTE - SILVER SIH")
     print("=" * 70)
-    print(f"Total de períodos: {total_periodos}")
+    print(
+        f"Total de períodos: "
+        f"{total_periodos}"
+    )
     print()
+
+    # --------------------------------------------------------
+    # PROCESSAMENTO DAS COMPETÊNCIAS
+    # --------------------------------------------------------
 
     for indice, (ano, mes) in enumerate(
         periodos,
         start=1,
     ):
+
         print()
         print(
             f"[{indice}/{total_periodos}] "
@@ -67,6 +91,7 @@ def processar_lote(
         )
 
         try:
+
             processar_sih(
                 ano=ano,
                 mes=mes,
@@ -82,8 +107,13 @@ def processar_lote(
             )
 
         except Exception as erro:
+
             falhas.append(
-                (ano, mes, str(erro))
+                (
+                    ano,
+                    mes,
+                    str(erro),
+                )
             )
 
             print(
@@ -93,6 +123,10 @@ def processar_lote(
             print(
                 f"Motivo: {erro}"
             )
+
+    # ========================================================
+    # RESUMO FINAL
+    # ========================================================
 
     print()
     print("=" * 70)
@@ -106,6 +140,7 @@ def processar_lote(
     )
 
     for ano, mes in sucessos:
+
         print(
             f"  [OK] {ano}/{mes:02d}"
         )
@@ -117,50 +152,93 @@ def processar_lote(
     )
 
     for ano, mes, erro in falhas:
+
         print(
             f"  [ERRO] {ano}/{mes:02d}"
         )
+
         print(
             f"         {erro}"
         )
 
     print()
+
     print(
-        f"Total esperado: {total_periodos}"
+        f"Total esperado: "
+        f"{total_periodos}"
     )
 
     print(
-        f"Total concluído: {len(sucessos)}"
+        f"Total concluído: "
+        f"{len(sucessos)}"
     )
 
     print(
-        f"Total com erro: {len(falhas)}"
+        f"Total com erro: "
+        f"{len(falhas)}"
     )
 
     print("=" * 70)
 
+    # ========================================================
+    # VALIDAÇÃO FINAL
+    # ========================================================
+
     if falhas:
-        print()
-        print(
-            "ATENÇÃO: existem períodos com erro."
-        )
-        print(
-            "Os períodos concluídos permanecem "
-            "disponíveis na Silver."
-        )
-    else:
-        print()
-        print(
-            "TODOS OS PERÍODOS FORAM PROCESSADOS "
-            "COM SUCESSO."
+
+        periodos_com_erro = ", ".join(
+            f"{ano}/{mes:02d}"
+            for ano, mes, _ in falhas
         )
 
+        raise RuntimeError(
+            "Falha no processamento da Silver SIH. "
+            f"Períodos com erro: {periodos_com_erro}"
+        )
+
+    if len(sucessos) != total_periodos:
+
+        raise RuntimeError(
+            "Quantidade de períodos concluídos diferente "
+            "da quantidade esperada. "
+            f"Esperado={total_periodos}, "
+            f"Concluído={len(sucessos)}."
+        )
+
+    print()
+    print(
+        "TODOS OS PERÍODOS FORAM PROCESSADOS "
+        "COM SUCESSO."
+    )
+
+    print(
+        f"Total de competências concluídas: "
+        f"{len(sucessos)}"
+    )
+
+
+# ============================================================
+# MAIN
+# ============================================================
 
 if __name__ == "__main__":
+
     spark = criar_spark()
 
+    spark.sparkContext.setLogLevel(
+        "ERROR"
+    )
+
     try:
+
         periodos = obter_periodos()
+
+        if len(periodos) != 36:
+
+            raise RuntimeError(
+                "Quantidade inesperada de competências SIH. "
+                f"Esperado=36, obtido={len(periodos)}."
+            )
 
         processar_lote(
             spark,
@@ -168,4 +246,5 @@ if __name__ == "__main__":
         )
 
     finally:
+
         spark.stop()

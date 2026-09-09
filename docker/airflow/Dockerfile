@@ -14,7 +14,7 @@ ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 USER airflow
 
+COPY requirements.txt /tmp/requirements.txt
+
 RUN pip install --no-cache-dir \
-    "apache-airflow==3.3.1" \
-    "apache-airflow-providers-apache-spark==6.3.2" \
-    "pyspark==3.5.0"
+    -r /tmp/requirements.txt

@@ -42,17 +42,8 @@ def criar_spark():
     return (
         SparkSession.builder
         .appName("TCC-Silver-IBGE")
-        .master("local[2]")
         .config("spark.sql.shuffle.partitions", "4")
         .config("spark.ui.enabled", "false")
-        .config(
-            "spark.pyspark.python",
-            "/opt/conda/bin/python"
-        )
-        .config(
-            "spark.pyspark.driver.python",
-            "/opt/conda/bin/python"
-        )
         .getOrCreate()
     )
 

@@ -21,7 +21,7 @@ SPARK_CONF = {
 
 
 # ============================================================
-# CAMINHOS DOS SCRIPTS
+# CAMINHOS DOS SCRIPTS - INMET
 # ============================================================
 
 SILVER_INMET_SCRIPT = (
@@ -38,6 +38,45 @@ SILVER_INMET_DIARIO_SCRIPT = (
 
 DQ_SILVER_INMET_DIARIO_SCRIPT = (
     f"{BASE_PATH}/src/quality/silver/dq_inmet_diario.py"
+)
+
+
+# ============================================================
+# CAMINHOS DOS SCRIPTS - IBGE
+# ============================================================
+
+SILVER_IBGE_SCRIPT = (
+    f"{BASE_PATH}/src/silver/ibge.py"
+)
+
+DQ_SILVER_IBGE_SCRIPT = (
+    f"{BASE_PATH}/src/quality/silver/dq_ibge.py"
+)
+
+
+# ============================================================
+# CAMINHOS DOS SCRIPTS - CID-10
+# ============================================================
+
+SILVER_CID10_SCRIPT = (
+    f"{BASE_PATH}/src/silver/cid10.py"
+)
+
+DQ_SILVER_CID10_SCRIPT = (
+    f"{BASE_PATH}/src/quality/silver/dq_cid10.py"
+)
+
+
+# ============================================================
+# CAMINHOS DOS SCRIPTS - SIH
+# ============================================================
+
+SILVER_SIH_SCRIPT = (
+    f"{BASE_PATH}/src/silver/processar_sih_lote.py"
+)
+
+DQ_SILVER_SIH_SCRIPT = (
+    f"{BASE_PATH}/src/quality/silver/dq_sih.py"
 )
 
 
@@ -68,10 +107,6 @@ with DAG(
         tooltip="Processamento e Data Quality dos dados do INMET",
     ) as inmet:
 
-        # ----------------------------------------------------
-        # SILVER INMET HORÁRIO
-        # ----------------------------------------------------
-
         silver_inmet = SparkSubmitOperator(
             task_id="silver_inmet",
             application=SILVER_INMET_SCRIPT,
@@ -83,10 +118,6 @@ with DAG(
             durable=False,
         )
 
-        # ----------------------------------------------------
-        # DATA QUALITY - SILVER INMET HORÁRIO
-        # ----------------------------------------------------
-
         dq_silver_inmet = SparkSubmitOperator(
             task_id="dq_silver_inmet",
             application=DQ_SILVER_INMET_SCRIPT,
@@ -96,10 +127,6 @@ with DAG(
             retries=0,
             durable=False,
         )
-
-        # ----------------------------------------------------
-        # SILVER INMET DIÁRIO
-        # ----------------------------------------------------
 
         silver_inmet_diario = SparkSubmitOperator(
             task_id="silver_inmet_diario",
@@ -112,10 +139,6 @@ with DAG(
             durable=False,
         )
 
-        # ----------------------------------------------------
-        # DATA QUALITY - SILVER INMET DIÁRIO
-        # ----------------------------------------------------
-
         dq_silver_inmet_diario = SparkSubmitOperator(
             task_id="dq_silver_inmet_diario",
             application=DQ_SILVER_INMET_DIARIO_SCRIPT,
@@ -126,13 +149,105 @@ with DAG(
             durable=False,
         )
 
-        # ----------------------------------------------------
-        # DEPENDÊNCIAS DO INMET
-        # ----------------------------------------------------
-
         (
             silver_inmet
             >> dq_silver_inmet
             >> silver_inmet_diario
             >> dq_silver_inmet_diario
         )
+
+    # ========================================================
+    # TASK GROUP - IBGE
+    # ========================================================
+
+    with TaskGroup(
+        group_id="ibge",
+        tooltip="Processamento e Data Quality dos dados do IBGE",
+    ) as ibge:
+
+        silver_ibge = SparkSubmitOperator(
+            task_id="silver_ibge",
+            application=SILVER_IBGE_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-silver-ibge",
+            conf=SPARK_CONF,
+            retries=1,
+            retry_delay=timedelta(minutes=1),
+            durable=False,
+        )
+
+        dq_silver_ibge = SparkSubmitOperator(
+            task_id="dq_silver_ibge",
+            application=DQ_SILVER_IBGE_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-dq-silver-ibge",
+            conf=SPARK_CONF,
+            retries=0,
+            durable=False,
+        )
+
+        silver_ibge >> dq_silver_ibge
+
+    # ========================================================
+    # TASK GROUP - CID-10
+    # ========================================================
+
+    with TaskGroup(
+        group_id="cid10",
+        tooltip="Processamento e Data Quality da classificação CID-10",
+    ) as cid10:
+
+        silver_cid10 = SparkSubmitOperator(
+            task_id="silver_cid10",
+            application=SILVER_CID10_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-silver-cid10",
+            conf=SPARK_CONF,
+            retries=1,
+            retry_delay=timedelta(minutes=1),
+            durable=False,
+        )
+
+        dq_silver_cid10 = SparkSubmitOperator(
+            task_id="dq_silver_cid10",
+            application=DQ_SILVER_CID10_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-dq-silver-cid10",
+            conf=SPARK_CONF,
+            retries=0,
+            durable=False,
+        )
+
+        silver_cid10 >> dq_silver_cid10
+
+    # ========================================================
+    # TASK GROUP - SIH
+    # ========================================================
+
+    with TaskGroup(
+        group_id="sih",
+        tooltip="Processamento e Data Quality dos dados do SIH",
+    ) as sih:
+
+        silver_sih = SparkSubmitOperator(
+            task_id="silver_sih",
+            application=SILVER_SIH_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-silver-sih",
+            conf=SPARK_CONF,
+            retries=1,
+            retry_delay=timedelta(minutes=1),
+            durable=False,
+        )
+
+        dq_silver_sih = SparkSubmitOperator(
+            task_id="dq_silver_sih",
+            application=DQ_SILVER_SIH_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-dq-silver-sih",
+            conf=SPARK_CONF,
+            retries=0,
+            durable=False,
+        )
+
+        silver_sih >> dq_silver_sih
