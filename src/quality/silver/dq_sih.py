@@ -11,7 +11,7 @@ from src.common.validators import (
     validar_nulos, validar_quantidade_registros, validar_tipos,
     validar_valores_aceitos,
 )
-from src.quality.silver.common import criar_spark
+from src.quality.silver.spark_session import criar_spark
 from src.quality.silver.quality_config import ANOS, IBGE_PATH, SIH_PATH, SIH_TOTAL_ESPERADO
 
 

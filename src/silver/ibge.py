@@ -42,8 +42,6 @@ def criar_spark():
     return (
         SparkSession.builder
         .appName("TCC-Silver-IBGE")
-        .config("spark.sql.shuffle.partitions", "4")
-        .config("spark.ui.enabled", "false")
         .getOrCreate()
     )
 

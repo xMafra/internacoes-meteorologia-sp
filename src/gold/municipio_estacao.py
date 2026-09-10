@@ -36,8 +36,6 @@ CAMINHO_GOLD = (
 spark = (
     SparkSession.builder
     .appName("TCC-Gold-Municipio-Estacao")
-    .master("local[2]")
-    .config("spark.ui.enabled", "false")
     .getOrCreate()
 )
 

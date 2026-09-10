@@ -19,6 +19,36 @@ SPARK_CONF = {
     "spark.ui.enabled": "false",
 }
 
+# Preserva o tuning dos scripts, sem impor shuffle aos jobs CID10 e SIH.
+SPARK_CONF_SHUFFLE_4 = {
+    **SPARK_CONF,
+    "spark.sql.shuffle.partitions": "4",
+}
+
+SPARK_CONF_INMET = {
+    **SPARK_CONF_SHUFFLE_4,
+    "spark.sql.execution.arrow.pyspark.enabled": "false",
+    # Resolve o Python do ambiente Airflow pelo PATH da imagem.
+    "spark.pyspark.python": "python3",
+    "spark.pyspark.driver.python": "python3",
+}
+
+SPARK_CONF_INMET_DIARIO = {
+    **SPARK_CONF,
+    "spark.sql.shuffle.partitions": "40",
+}
+
+# Evita pressão de memória no driver ao materializar dimensões da fato.
+SPARK_CONF_FATO_INTERNACAO = {
+    **SPARK_CONF,
+    "spark.sql.autoBroadcastJoinThreshold": "-1",
+}
+
+SPARK_CONF_FATO_INTERNACAO_METEOROLOGIA = {
+    **SPARK_CONF,
+    "spark.sql.shuffle.partitions": "40",
+}
+
 
 # ============================================================
 # CAMINHOS DOS SCRIPTS - INMET
@@ -81,6 +111,26 @@ DQ_SILVER_SIH_SCRIPT = (
 
 
 # ============================================================
+# CAMINHOS DOS SCRIPTS - GOLD
+# ============================================================
+
+GOLD_MUNICIPIO_ESTACAO_SCRIPT = f"{BASE_PATH}/src/gold/municipio_estacao.py"
+DQ_GOLD_MUNICIPIO_ESTACAO_SCRIPT = (
+    f"{BASE_PATH}/src/quality/gold/dq_municipio_estacao.py"
+)
+GOLD_FATO_INTERNACAO_SCRIPT = f"{BASE_PATH}/src/gold/fato_internacao.py"
+DQ_GOLD_FATO_INTERNACAO_SCRIPT = (
+    f"{BASE_PATH}/src/quality/gold/dq_fato_internacao.py"
+)
+GOLD_FATO_INTERNACAO_METEOROLOGIA_SCRIPT = (
+    f"{BASE_PATH}/src/gold/fato_internacao_meteorologia.py"
+)
+DQ_GOLD_FATO_INTERNACAO_METEOROLOGIA_SCRIPT = (
+    f"{BASE_PATH}/src/quality/gold/dq_fato_internacao_meteorologia.py"
+)
+
+
+# ============================================================
 # DEFINIÇÃO DA DAG
 # ============================================================
 
@@ -112,7 +162,7 @@ with DAG(
             application=SILVER_INMET_SCRIPT,
             conn_id=SPARK_CONNECTION,
             name="tcc-silver-inmet",
-            conf=SPARK_CONF,
+            conf=SPARK_CONF_INMET,
             retries=1,
             retry_delay=timedelta(minutes=1),
             durable=False,
@@ -123,7 +173,7 @@ with DAG(
             application=DQ_SILVER_INMET_SCRIPT,
             conn_id=SPARK_CONNECTION,
             name="tcc-dq-silver-inmet",
-            conf=SPARK_CONF,
+            conf=SPARK_CONF_SHUFFLE_4,
             retries=0,
             durable=False,
         )
@@ -133,7 +183,7 @@ with DAG(
             application=SILVER_INMET_DIARIO_SCRIPT,
             conn_id=SPARK_CONNECTION,
             name="tcc-silver-inmet-diario",
-            conf=SPARK_CONF,
+            conf=SPARK_CONF_INMET_DIARIO,
             retries=1,
             retry_delay=timedelta(minutes=1),
             durable=False,
@@ -144,7 +194,7 @@ with DAG(
             application=DQ_SILVER_INMET_DIARIO_SCRIPT,
             conn_id=SPARK_CONNECTION,
             name="tcc-dq-silver-inmet-diario",
-            conf=SPARK_CONF,
+            conf=SPARK_CONF_SHUFFLE_4,
             retries=0,
             durable=False,
         )
@@ -170,7 +220,7 @@ with DAG(
             application=SILVER_IBGE_SCRIPT,
             conn_id=SPARK_CONNECTION,
             name="tcc-silver-ibge",
-            conf=SPARK_CONF,
+            conf=SPARK_CONF_SHUFFLE_4,
             retries=1,
             retry_delay=timedelta(minutes=1),
             durable=False,
@@ -181,7 +231,7 @@ with DAG(
             application=DQ_SILVER_IBGE_SCRIPT,
             conn_id=SPARK_CONNECTION,
             name="tcc-dq-silver-ibge",
-            conf=SPARK_CONF,
+            conf=SPARK_CONF_SHUFFLE_4,
             retries=0,
             durable=False,
         )
@@ -213,7 +263,7 @@ with DAG(
             application=DQ_SILVER_CID10_SCRIPT,
             conn_id=SPARK_CONNECTION,
             name="tcc-dq-silver-cid10",
-            conf=SPARK_CONF,
+            conf=SPARK_CONF_SHUFFLE_4,
             retries=0,
             durable=False,
         )
@@ -245,9 +295,98 @@ with DAG(
             application=DQ_SILVER_SIH_SCRIPT,
             conn_id=SPARK_CONNECTION,
             name="tcc-dq-silver-sih",
-            conf=SPARK_CONF,
+            conf=SPARK_CONF_SHUFFLE_4,
             retries=0,
             durable=False,
         )
 
         silver_sih >> dq_silver_sih
+
+    # ========================================================
+    # TASK GROUP - GOLD
+    # ========================================================
+
+    with TaskGroup(
+        group_id="gold",
+        tooltip="Integração Gold e seus gates de Data Quality",
+    ) as gold:
+
+        gold_municipio_estacao = SparkSubmitOperator(
+            task_id="gold_municipio_estacao",
+            application=GOLD_MUNICIPIO_ESTACAO_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-gold-municipio-estacao",
+            conf=SPARK_CONF,
+            retries=1,
+            retry_delay=timedelta(minutes=1),
+            durable=False,
+        )
+
+        dq_gold_municipio_estacao = SparkSubmitOperator(
+            task_id="dq_gold_municipio_estacao",
+            application=DQ_GOLD_MUNICIPIO_ESTACAO_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-dq-gold-municipio-estacao",
+            conf=SPARK_CONF_SHUFFLE_4,
+            retries=0,
+            durable=False,
+        )
+
+        gold_fato_internacao = SparkSubmitOperator(
+            task_id="gold_fato_internacao",
+            application=GOLD_FATO_INTERNACAO_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-gold-fato-internacao",
+            conf=SPARK_CONF_FATO_INTERNACAO,
+            retries=1,
+            retry_delay=timedelta(minutes=1),
+            durable=False,
+        )
+
+        dq_gold_fato_internacao = SparkSubmitOperator(
+            task_id="dq_gold_fato_internacao",
+            application=DQ_GOLD_FATO_INTERNACAO_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-dq-gold-fato-internacao",
+            conf=SPARK_CONF_SHUFFLE_4,
+            retries=0,
+            durable=False,
+        )
+
+        gold_fato_internacao_meteorologia = SparkSubmitOperator(
+            task_id="gold_fato_internacao_meteorologia",
+            application=GOLD_FATO_INTERNACAO_METEOROLOGIA_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-gold-fato-internacao-meteorologia",
+            conf=SPARK_CONF_FATO_INTERNACAO_METEOROLOGIA,
+            retries=1,
+            retry_delay=timedelta(minutes=1),
+            durable=False,
+        )
+
+        dq_gold_fato_internacao_meteorologia = SparkSubmitOperator(
+            task_id="dq_gold_fato_internacao_meteorologia",
+            application=DQ_GOLD_FATO_INTERNACAO_METEOROLOGIA_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-dq-gold-fato-internacao-meteorologia",
+            conf=SPARK_CONF_SHUFFLE_4,
+            retries=0,
+            durable=False,
+        )
+
+        gold_municipio_estacao >> dq_gold_municipio_estacao
+        gold_fato_internacao >> dq_gold_fato_internacao
+        gold_fato_internacao_meteorologia >> dq_gold_fato_internacao_meteorologia
+
+    # Cada transformação aguarda aprovação de todas as fontes consumidas.
+    [dq_silver_ibge, dq_silver_inmet] >> gold_municipio_estacao
+    [
+        dq_silver_sih,
+        dq_silver_ibge,
+        dq_silver_cid10,
+        dq_gold_municipio_estacao,
+    ] >> gold_fato_internacao
+    [
+        dq_gold_fato_internacao,
+        dq_silver_inmet_diario,
+    ] >> gold_fato_internacao_meteorologia

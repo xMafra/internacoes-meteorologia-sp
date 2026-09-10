@@ -27,11 +27,10 @@ CAMINHO_SILVER_SIH = (
 
 
 def criar_spark() -> SparkSession:
-    """Cria uma sessão Spark local para processamento do SIH."""
+    """Cria uma sessão Spark para processamento do SIH."""
     return (
         SparkSession.builder
         .appName("TCC-Silver-SIH")
-        .master("local[2]")
         .getOrCreate()
     )
 

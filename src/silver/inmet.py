@@ -43,21 +43,6 @@ def criar_spark():
     return (
         SparkSession.builder
         .appName("TCC-Silver-INMET")
-        .master("local[2]")
-        .config("spark.sql.shuffle.partitions", "4")
-        .config("spark.ui.enabled", "false")
-        .config(
-            "spark.pyspark.python",
-            "/opt/conda/bin/python"
-        )
-        .config(
-            "spark.pyspark.driver.python",
-            "/opt/conda/bin/python"
-        )
-        .config(
-            "spark.sql.execution.arrow.pyspark.enabled",
-            "false"
-        )
         .getOrCreate()
     )
 

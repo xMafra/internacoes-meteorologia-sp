@@ -54,8 +54,6 @@ SILVER_INMET_DIARIO = (
 spark = (
     SparkSession.builder
     .appName("Silver_INMET_Diario")
-    .config("spark.sql.shuffle.partitions", "40")
-    .config("spark.ui.enabled", "false")
     .getOrCreate()
 )
 

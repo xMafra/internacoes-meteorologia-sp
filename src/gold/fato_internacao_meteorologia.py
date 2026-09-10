@@ -83,14 +83,6 @@ DATA_FIM = "2025-12-31"
 spark = (
     SparkSession.builder
     .appName("Gold_Fato_Internacao_Meteorologia")
-    .config(
-        "spark.sql.shuffle.partitions",
-        "40"
-    )
-    .config(
-        "spark.ui.enabled",
-        "false"
-    )
     .getOrCreate()
 )
 

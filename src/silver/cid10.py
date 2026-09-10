@@ -37,8 +37,6 @@ ARQUIVOS = {
 spark = (
     SparkSession.builder
     .appName("TCC-Silver-CID10")
-    .master("local[2]")
-    .config("spark.ui.enabled", "false")
     .getOrCreate()
 )
 

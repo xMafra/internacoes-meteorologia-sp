@@ -11,7 +11,7 @@ from src.common.validators import (
     validar_intervalo, validar_nulos, validar_periodo,
     validar_quantidade_distinta, validar_quantidade_registros, validar_tipos,
 )
-from src.quality.silver.common import criar_spark
+from src.quality.silver.spark_session import criar_spark
 from src.quality.silver.quality_config import (
     DATA_FIM, DATA_INICIO, INMET_DIARIO_ESPERADO,
     INMET_DIARIO_PATH, INMET_ESTACOES_ESPERADAS,

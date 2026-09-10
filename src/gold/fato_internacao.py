@@ -41,10 +41,6 @@ GOLD_OUTPUT = (
 spark = (
     SparkSession.builder
     .appName("Gold_Fato_Internacao")
-    # A fato possui mais de 8 milhÃµes de registros. Desativamos broadcast
-    # automÃ¡tico para impedir que o Spark exceda a memÃ³ria do driver ao
-    # materializar dimensÃµes durante as validaÃ§Ãµes.
-    .config("spark.sql.autoBroadcastJoinThreshold", "-1")
     .getOrCreate()
 )
 

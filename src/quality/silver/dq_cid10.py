@@ -10,7 +10,7 @@ from src.common.validators import (
     validar_colunas_obrigatorias, validar_condicao, validar_nulos,
     validar_quantidade_distinta, validar_quantidade_registros, validar_tipos,
 )
-from src.quality.silver.common import criar_spark
+from src.quality.silver.spark_session import criar_spark
 from src.quality.silver.quality_config import CID10_CODIGOS_ESPERADOS, CID10_PATH
 
 

@@ -1,10 +1,12 @@
-from pyspark.sql import SparkSession
+"""Sessão dos DQs Silver; runtime e tuning definidos pelo orquestrador.
 
-__all__ = ["criar_spark"]
+O helper common permanece inalterado enquanto ainda atende ao DQ Gold.
+"""
+
+from pyspark.sql import SparkSession
 
 
 def criar_spark(nome: str) -> SparkSession:
-    """Cria a sessão DQ Gold com runtime e tuning definidos pelo Airflow."""
     spark = (
         SparkSession.builder
         .appName(nome)
