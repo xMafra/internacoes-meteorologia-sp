@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
+import sys
 
 from airflow.sdk import DAG, TaskGroup
+from airflow.providers.standard.operators.python import PythonOperator
 
 from airflow.providers.apache.spark.operators.spark_submit import (
     SparkSubmitOperator,
@@ -12,6 +14,12 @@ from airflow.providers.apache.spark.operators.spark_submit import (
 # ============================================================
 
 BASE_PATH = "/home/jovyan/work"
+
+# O projeto é montado neste caminho também nos workers.
+if BASE_PATH not in sys.path:
+    sys.path.insert(0, BASE_PATH)
+
+from src.orchestration import bronze as bronze_runtime
 
 SPARK_CONNECTION = "spark_default"
 
@@ -157,6 +165,19 @@ with DAG(
         tooltip="Processamento e Data Quality dos dados do INMET",
     ) as inmet:
 
+        bronze_inmet = PythonOperator(
+            task_id="bronze_inmet",
+            python_callable=bronze_runtime.bronze_inmet,
+            retries=2,
+            retry_delay=timedelta(minutes=2),
+        )
+
+        dq_bronze_inmet = PythonOperator(
+            task_id="dq_bronze_inmet",
+            python_callable=bronze_runtime.dq_bronze_inmet,
+            retries=0,
+        )
+
         silver_inmet = SparkSubmitOperator(
             task_id="silver_inmet",
             application=SILVER_INMET_SCRIPT,
@@ -215,6 +236,19 @@ with DAG(
         tooltip="Processamento e Data Quality dos dados do IBGE",
     ) as ibge:
 
+        bronze_ibge = PythonOperator(
+            task_id="bronze_ibge",
+            python_callable=bronze_runtime.bronze_ibge,
+            retries=2,
+            retry_delay=timedelta(minutes=1),
+        )
+
+        dq_bronze_ibge = PythonOperator(
+            task_id="dq_bronze_ibge",
+            python_callable=bronze_runtime.dq_bronze_ibge,
+            retries=0,
+        )
+
         silver_ibge = SparkSubmitOperator(
             task_id="silver_ibge",
             application=SILVER_IBGE_SCRIPT,
@@ -247,6 +281,18 @@ with DAG(
         tooltip="Processamento e Data Quality da classificação CID-10",
     ) as cid10:
 
+        bronze_cid10 = PythonOperator(
+            task_id="bronze_cid10",
+            python_callable=bronze_runtime.bronze_cid10,
+            retries=0,
+        )
+
+        dq_bronze_cid10 = PythonOperator(
+            task_id="dq_bronze_cid10",
+            python_callable=bronze_runtime.dq_bronze_cid10,
+            retries=0,
+        )
+
         silver_cid10 = SparkSubmitOperator(
             task_id="silver_cid10",
             application=SILVER_CID10_SCRIPT,
@@ -278,6 +324,19 @@ with DAG(
         group_id="sih",
         tooltip="Processamento e Data Quality dos dados do SIH",
     ) as sih:
+
+        bronze_sih = PythonOperator(
+            task_id="bronze_sih",
+            python_callable=bronze_runtime.bronze_sih,
+            retries=3,
+            retry_delay=timedelta(minutes=2),
+        )
+
+        dq_bronze_sih = PythonOperator(
+            task_id="dq_bronze_sih",
+            python_callable=bronze_runtime.dq_bronze_sih,
+            retries=0,
+        )
 
         silver_sih = SparkSubmitOperator(
             task_id="silver_sih",
@@ -390,3 +449,10 @@ with DAG(
         dq_gold_fato_internacao,
         dq_silver_inmet_diario,
     ] >> gold_fato_internacao_meteorologia
+
+    # Gates Bronze, incluindo o cadastro IBGE consumido diretamente pelo SIH.
+    bronze_inmet >> dq_bronze_inmet >> silver_inmet
+    bronze_ibge >> dq_bronze_ibge >> silver_ibge
+    bronze_cid10 >> dq_bronze_cid10 >> silver_cid10
+    bronze_sih >> dq_bronze_sih >> silver_sih
+    dq_bronze_ibge >> silver_sih

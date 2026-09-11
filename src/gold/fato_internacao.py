@@ -1,3 +1,5 @@
+from time import perf_counter
+
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     col,
@@ -12,6 +14,7 @@ from pyspark.sql.functions import (
     substring,
     lit,
     coalesce,
+    sum as spark_sum,
 )
 
 
@@ -1724,22 +1727,30 @@ campos_importantes = [
 ]
 
 
+inicio_validacao_campos = perf_counter()
+
+# Uma única action para todas as contagens; coalesce preserva zero
+# também para um DataFrame vazio, como no filter(...).count() anterior.
+metricas_campos_importantes = df_gold.agg(
+    *[
+        coalesce(
+            spark_sum(
+                when(
+                    col(campo).isNull()
+                    | (trim(col(campo).cast("string")) == ""),
+                    1,
+                ).otherwise(0)
+            ),
+            lit(0),
+        ).alias(campo)
+        for campo in campos_importantes
+    ]
+).first()
+
+
 for campo in campos_importantes:
 
-    quantidade_nulos = (
-        df_gold
-        .filter(
-            col(campo).isNull()
-            |
-            (
-                trim(
-                    col(campo)
-                    .cast("string")
-                ) == ""
-            )
-        )
-        .count()
-    )
+    quantidade_nulos = metricas_campos_importantes[campo]
 
 
     print(
@@ -1755,6 +1766,12 @@ for campo in campos_importantes:
             f"O campo {campo} "
             "possui valores nulos/vazios."
         )
+
+
+print(
+    "[PERFORMANCE] Validação consolidada de campos importantes: "
+    f"{perf_counter() - inicio_validacao_campos:.3f} segundos"
+)
 
 
 # ==============================================================
