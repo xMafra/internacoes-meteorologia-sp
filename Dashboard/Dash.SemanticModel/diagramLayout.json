@@ -1,0 +1,112 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 17.598290403224194
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 316.76922725803553,
+            "y": 0
+          },
+          "nodeIndex": "dim_cid",
+          "nodeLineageTag": "add48709-a763-4c7f-a06a-e252c976b16c",
+          "size": {
+            "height": 272,
+            "width": 234
+          },
+          "zIndex": 1
+        },
+        {
+          "location": {
+            "x": 1136.6589434007392,
+            "y": 385.67098285740212
+          },
+          "nodeIndex": "dim_estacao",
+          "nodeLineageTag": "7e50c369-ce69-4e0e-8694-e232122488c4",
+          "size": {
+            "height": 248,
+            "width": 234
+          },
+          "zIndex": 2
+        },
+        {
+          "location": {
+            "x": 726.01836845072353,
+            "y": 0
+          },
+          "nodeIndex": "dim_municipio",
+          "nodeLineageTag": "de74c202-572b-4ea7-bb86-80299b6f6be4",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 3
+        },
+        {
+          "location": {
+            "x": 724.5502814537931,
+            "y": 736.726568427174
+          },
+          "nodeIndex": "dim_tempo",
+          "nodeLineageTag": "73ca68df-fd9f-4010-a4e4-6e5e4963d49e",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 6
+        },
+        {
+          "location": {
+            "x": 725.27727927959688,
+            "y": 358.7565674592841
+          },
+          "nodeIndex": "fato_municipio_dia",
+          "nodeLineageTag": "fe32e495-a32d-4c6e-b74c-6354268a3de5",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 4
+        },
+        {
+          "location": {
+            "x": 316.63002292735086,
+            "y": 358.36175345277672
+          },
+          "nodeIndex": "fato_municipio_dia_cid",
+          "nodeLineageTag": "7bb38676-888d-4ccb-9615-b765009edb69",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 5
+        },
+        {
+          "location": {
+            "x": 1104.0289204733883,
+            "y": 418.363284213587
+          },
+          "nodeIndex": "Defasagem",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "Todas as tabelas",
+      "zoomValue": 79.553182037699813,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "Todas as tabelas",
+  "defaultDiagram": "Todas as tabelas"
+}

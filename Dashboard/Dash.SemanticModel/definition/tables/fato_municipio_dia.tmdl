@@ -1,0 +1,1515 @@
+table fato_municipio_dia
+	lineageTag: fe32e495-a32d-4c6e-b74c-6354268a3de5
+
+	measure 'Total Internações' =
+			
+			SUM(
+			    fato_municipio_dia[Dados.qtd_internacoes]
+			)
+		formatString: 0
+		lineageTag: 6e9b0739-c533-4088-b8b4-5ccd77e107a4
+
+	measure 'Total Óbitos' =
+			
+			SUM(
+			    fato_municipio_dia[Dados.qtd_obitos]
+			)
+		formatString: 0
+		lineageTag: 8cdfa889-9a68-4d38-848c-9c7852a8fd58
+
+	measure 'Taxa de Mortalidade' =
+			
+			DIVIDE(
+			    [Total Óbitos],
+			    [Total Internações],
+			    0
+			)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: d3c34d3a-a00e-4faa-b199-8dbb739a4a68
+
+	measure 'Total Dias Permanência' =
+			
+			SUM(
+			    fato_municipio_dia[Dados.dias_permanencia_total]
+			)
+		formatString: 0
+		lineageTag: e7c8132c-5651-46e4-b533-29916dc2814d
+
+	measure 'Permanência Média' =
+			
+			DIVIDE(
+			    [Total Dias Permanência],
+			    [Total Internações],
+			    0
+			)
+		formatString: 0.00
+		lineageTag: d5ac6907-557b-431a-8c99-f23f2637740a
+
+	measure 'Valor Total Internações' =
+			
+			SUM(
+			    fato_municipio_dia[Dados.valor_total_internacoes]
+			)
+		formatString: "R$"\ #,0.00;-"R$"\ #,0.00;"R$"\ #,0.00
+		lineageTag: 8a3fdb3d-8f4d-4285-a2e6-3e2fab3398a3
+
+		annotation PBI_FormatHint = {"currencyCulture":"pt-BR"}
+
+	measure 'Valor Médio por Internação' =
+			
+			DIVIDE(
+			    [Valor Total Internações],
+			    [Total Internações],
+			    0
+			)
+		formatString: "R$"\ #,0.###############;-"R$"\ #,0.###############;"R$"\ #,0.###############
+		lineageTag: afaddc8d-a955-4ee1-bb53-c832b2968624
+
+		annotation PBI_FormatHint = {"currencyCulture":"pt-BR"}
+
+	measure 'Temperatura Média (ºC)' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.temperatura_media_dia_c]
+			)
+		lineageTag: 275ed102-bb46-43d7-ac09-5e9fcc72e8fe
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Umidade Média (%)' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.umidade_media_dia_pct]
+			)
+		lineageTag: fdca12c8-cbb9-4bf9-8b94-c5b7fbe2a9db
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Precipitação Média Diária (mm)' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.precipitacao_dia_mm]
+			)
+		lineageTag: 49f6520c-69ed-4bb1-984b-9e2adaeb4b43
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Radiação Solar Média Diária (kJ/m²)' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.radiacao_global_dia_kj_m2]
+			)
+		lineageTag: 23789aee-1eba-4250-bd3d-07d871e6fe15
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Vento Médio' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.vento_medio_dia_ms]
+			)
+		lineageTag: 4328ce34-8bf2-424b-9404-9f6254ec37c7
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Total Internações CID' =
+			
+			SUM(
+			    fato_municipio_dia_cid[Dados.qtd_internacoes]
+			)
+		formatString: 0
+		lineageTag: 0e2aacbe-0f78-4825-b03c-667cb4a277bd
+
+	measure 'Temperatura Mínima Média' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.temperatura_minima_dia_c]
+			)
+		lineageTag: 6d7d8b01-c2fc-4fc4-a860-816c764ef82a
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Temperatura Máxima Média' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.temperatura_maxima_dia_c]
+			)
+		lineageTag: 389f9d92-eb11-4203-84ae-27c18d3a60ec
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Pressão Média' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.pressao_media_dia_mb]
+			)
+		lineageTag: ac6deb18-f880-4e20-9cf9-f6c6a639a9a7
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Ponto de Orvalho Médio' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.orvalho_medio_dia_c]
+			)
+		lineageTag: f9751712-f3e0-487c-b3b1-21e8232e1e25
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Rajada Máxima Média' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.rajada_maxima_dia_ms]
+			)
+		lineageTag: 60656c5e-3548-498c-9fd6-3881396667d6
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Temperatura Média Lag 1d' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.temperatura_media_lag_1d]
+			)
+		lineageTag: 8d394092-7335-471f-a48b-9031fc23ab13
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Temperatura Média Lag 3d' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.temperatura_media_lag_3d]
+			)
+		lineageTag: 63d374c2-599e-4441-b0ab-aaa29c294463
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Temperatura Média Lag 7d' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.temperatura_media_lag_7d]
+			)
+		lineageTag: 5b9f0209-850e-4daf-807a-cbbca1b09daa
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Município-Dias Observados' =
+			
+			DISTINCTCOUNT(
+			    fato_municipio_dia[Dados.municipio_dia_id]
+			)
+		formatString: 0
+		lineageTag: 811e9d17-1ade-4e50-8b5b-13f1205b1f5f
+
+	measure 'Internações por Município-Dia' =
+			
+			DIVIDE(
+			    [Total Internações],
+			    [Município-Dias Observados],
+			    0
+			)
+		lineageTag: dc5ff4bc-4be1-4477-8557-c8dbb6eda109
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Pressão Atmosférica Média' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.pressao_media_dia_mb]
+			)
+		lineageTag: 27c9f5c0-8b8b-4a3b-ace4-8f43c0c0b690
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure Município-Dias =
+			
+			COUNTROWS(
+			    fato_municipio_dia
+			)
+		formatString: 0
+		lineageTag: e4a32657-db79-45f1-8b9f-b0c812622a1b
+
+	measure 'Média Internações por Município-Dia' =
+			
+			DIVIDE(
+			    [Total Internações],
+			    [Município-Dias],
+			    0
+			)
+		lineageTag: ef7ffbb6-5c30-47bd-a092-2392b04972b9
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Internações Dias Frios' =
+			
+			CALCULATE(
+			    [Total Internações],
+			    fato_municipio_dia[Dados.temperatura_media_dia_c] < 20
+			)
+		formatString: 0
+		lineageTag: 6f20f5e8-9778-4947-ba5e-3eb76000b6e2
+
+	measure 'Município-Dias Frios' =
+			
+			CALCULATE(
+			    [Município-Dias],
+			    fato_municipio_dia[Dados.temperatura_media_dia_c] < 20
+			)
+		formatString: 0
+		lineageTag: 5ec29a1a-820c-44cd-acbe-3f3b63037c23
+
+	measure 'Média Internações Dias Frios' =
+			
+			DIVIDE(
+			    [Internações Dias Frios],
+			    [Município-Dias Frios],
+			    BLANK()
+			)
+		lineageTag: 9c88beb0-3cec-4088-822f-a2970fb3b6e9
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Internações Dias Quentes' =
+			
+			CALCULATE(
+			    [Total Internações],
+			    fato_municipio_dia[Dados.temperatura_media_dia_c] >= 25
+			)
+		formatString: 0
+		lineageTag: a3df6320-a239-48b3-9a6a-18a4e01b8b57
+
+	measure 'Município-Dias Quentes' =
+			
+			CALCULATE(
+			    [Município-Dias],
+			    fato_municipio_dia[Dados.temperatura_media_dia_c] >= 25
+			)
+		formatString: 0
+		lineageTag: 1ba8a7bd-b68a-41d3-8e0d-434e11ba31bf
+
+	measure 'Média Internações Dias Quentes' =
+			
+			DIVIDE(
+			    [Internações Dias Quentes],
+			    [Município-Dias Quentes],
+			    BLANK()
+			)
+		lineageTag: 01087d7e-273b-4983-bb43-86695ba3f67a
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Diferença Média Frio Quente' =
+			
+			[Média Internações Dias Frios]
+			    - [Média Internações Dias Quentes]
+		lineageTag: 23071045-6d0d-4dbb-a0a9-dfc21e7adea6
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Variação Percentual Frio Quente' =
+			
+			DIVIDE(
+			    [Média Internações Dias Frios]
+			        - [Média Internações Dias Quentes],
+			    [Média Internações Dias Quentes],
+			    BLANK()
+			)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: fa48864e-063a-49fc-88d9-3c2033b21db1
+
+	measure 'Amostra Temperatura Válida' =
+			
+			IF(
+			    [Município-Dias Frios] >= 30
+			        && [Município-Dias Quentes] >= 30,
+			    1,
+			    0
+			)
+		formatString: 0
+		lineageTag: e5f7acd3-0516-4121-9428-11c0e70b4f7f
+
+	measure 'Temperatura Mesmo Dia' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.temperatura_media_dia_c]
+			)
+		lineageTag: d3b7ada7-52f2-49d4-9684-c5079659b38f
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Temperatura Lag 1 Dia' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.temperatura_media_lag_1d]
+			)
+		lineageTag: b1ae9c06-5bb4-41f3-a619-2d5ec1d7c611
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Temperatura Lag 3 Dias' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.temperatura_media_lag_3d]
+			)
+		lineageTag: 82ef6148-5305-4c38-9704-22d362992151
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Temperatura Lag 7 Dias' =
+			
+			AVERAGE(
+			    fato_municipio_dia[Dados.temperatura_media_lag_7d]
+			)
+		lineageTag: 3a62ccfa-dd95-4f57-9ed4-93ba0137fd38
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Internações Frio Lag 1' =
+			
+			CALCULATE(
+			    [Total Internações],
+			    fato_municipio_dia[Dados.temperatura_media_lag_1d] < 20
+			)
+		formatString: 0
+		lineageTag: a4ff999d-3411-4ae7-9012-ea373f51d11d
+
+	measure 'Município-Dias Frio Lag 1' =
+			
+			CALCULATE(
+			    [Município-Dias],
+			    fato_municipio_dia[Dados.temperatura_media_lag_1d] < 20
+			)
+		formatString: 0
+		lineageTag: d48d35f8-d3a8-4e0d-a56e-ab095ebc9850
+
+	measure 'Média Internações Frio Lag 1' =
+			
+			DIVIDE(
+			    [Internações Frio Lag 1],
+			    [Município-Dias Frio Lag 1],
+			    BLANK()
+			)
+		lineageTag: 9c609f92-319e-4cf4-bb70-52fe0683c286
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Internações Quente Lag 1' =
+			
+			CALCULATE(
+			    [Total Internações],
+			    fato_municipio_dia[Dados.temperatura_media_lag_1d] >= 25
+			)
+		formatString: 0
+		lineageTag: 06932cce-c376-4c18-a4f3-a25fbbdfd9c2
+
+	measure 'Município-Dias Quente Lag 1' =
+			
+			CALCULATE(
+			    [Município-Dias],
+			    fato_municipio_dia[Dados.temperatura_media_lag_1d] >= 25
+			)
+		formatString: 0
+		lineageTag: 7f3484f4-6602-460b-8059-a8f69d110250
+
+	measure 'Média Internações Quente Lag 1' =
+			
+			DIVIDE(
+			    [Internações Quente Lag 1],
+			    [Município-Dias Quente Lag 1],
+			    BLANK()
+			)
+		lineageTag: fc60d96f-1dca-47ac-b829-0fa171778c97
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Variação Frio Quente Lag 1' =
+			
+			DIVIDE(
+			    [Média Internações Frio Lag 1]
+			        - [Média Internações Quente Lag 1],
+			    [Média Internações Quente Lag 1],
+			    BLANK()
+			)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 102b30f1-8bc0-4727-85ef-30b866ad65c0
+
+	measure 'Internações Frio Lag 3' =
+			
+			CALCULATE(
+			    [Total Internações],
+			    fato_municipio_dia[Dados.temperatura_media_lag_3d] < 20
+			)
+		formatString: 0
+		lineageTag: a29cf1d1-9fec-414d-afe3-455c7749e639
+
+	measure 'Município-Dias Frio Lag 3' =
+			
+			CALCULATE(
+			    [Município-Dias],
+			    fato_municipio_dia[Dados.temperatura_media_lag_3d] < 20
+			)
+		formatString: 0
+		lineageTag: d1396244-6ed9-4223-a1b7-3a5ea7186fb7
+
+	measure 'Média Internações Frio Lag 3' =
+			
+			DIVIDE(
+			    [Internações Frio Lag 3],
+			    [Município-Dias Frio Lag 3],
+			    BLANK()
+			)
+		lineageTag: b2cf926d-dc9c-43c7-87d6-a2280b686fcc
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Internações Quente Lag 3' =
+			
+			CALCULATE(
+			    [Total Internações],
+			    fato_municipio_dia[Dados.temperatura_media_lag_3d] >= 25
+			)
+		formatString: 0
+		lineageTag: e7d8f7b4-9880-40fc-9118-8fe3033959fa
+
+	measure 'Município-Dias Quente Lag 3' =
+			
+			CALCULATE(
+			    [Município-Dias],
+			    fato_municipio_dia[Dados.temperatura_media_lag_3d] >= 25
+			)
+		formatString: 0
+		lineageTag: d1f5e570-0b4b-4c6c-aedc-70659b1b6a62
+
+	measure 'Média Internações Quente Lag 3' =
+			
+			DIVIDE(
+			    [Internações Quente Lag 3],
+			    [Município-Dias Quente Lag 3],
+			    BLANK()
+			)
+		lineageTag: fda6bfe7-9a4c-405a-a094-3c1c15bfa55d
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure Medida
+		lineageTag: 7f14f68e-d2de-4291-b387-b3d420af6835
+
+		annotation 43dbc3e8-3a1c-4b6f-9923-b49ff7d6691c = True
+
+	measure 'Variação Frio Quente Lag 3' =
+			
+			DIVIDE(
+			    [Média Internações Frio Lag 3]
+			        - [Média Internações Quente Lag 3],
+			    [Média Internações Quente Lag 3],
+			    BLANK()
+			)
+		lineageTag: fab6fec4-6387-4306-8fd7-d29c16439b84
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Internações Frio Lag 7' =
+			
+			CALCULATE(
+			    [Total Internações],
+			    fato_municipio_dia[Dados.temperatura_media_lag_7d] < 20
+			)
+		formatString: 0
+		lineageTag: 280561a9-698a-4dfd-8efc-437b9b3f474b
+
+	measure 'Município-Dias Frio Lag 7' =
+			
+			CALCULATE(
+			    [Município-Dias],
+			    fato_municipio_dia[Dados.temperatura_media_lag_7d] < 20
+			)
+		formatString: 0
+		lineageTag: 4736303d-a27b-4037-914e-df3f9a0cf740
+
+	measure 'Média Internações Frio Lag 7' =
+			
+			DIVIDE(
+			    [Internações Frio Lag 7],
+			    [Município-Dias Frio Lag 7],
+			    BLANK()
+			)
+		lineageTag: 3ec5caf3-4571-46e0-aa90-bd2ba90a02ac
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Internações Quente Lag 7' =
+			
+			CALCULATE(
+			    [Total Internações],
+			    fato_municipio_dia[Dados.temperatura_media_lag_7d] >= 25
+			)
+		formatString: 0
+		lineageTag: 609317a8-e1e5-48aa-8672-3145cd195742
+
+	measure 'Município-Dias Quente Lag 7' =
+			
+			CALCULATE(
+			    [Município-Dias],
+			    fato_municipio_dia[Dados.temperatura_media_lag_7d] >= 25
+			)
+		formatString: 0
+		lineageTag: 3a569b5c-fd29-4faf-844b-788b647a6442
+
+	measure 'Média Internações Quente Lag 7' =
+			
+			DIVIDE(
+			    [Internações Quente Lag 7],
+			    [Município-Dias Quente Lag 7],
+			    BLANK()
+			)
+		lineageTag: 5e853f1b-e1d2-4df8-9875-2e0b0a69fa05
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Variação Frio Quente Lag 7' =
+			
+			DIVIDE(
+			    [Média Internações Frio Lag 7]
+			        - [Média Internações Quente Lag 7],
+			    [Média Internações Quente Lag 7],
+			    BLANK()
+			)
+		lineageTag: 6c22681e-a4ec-430d-ace7-24b0d10671c5
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Variação por Defasagem' =
+			
+			SWITCH(
+			    SELECTEDVALUE(Defasagem[Defasagem]),
+			    "Mesmo dia", [Variação Percentual Frio Quente],
+			    "Lag 1 dia", [Variação Frio Quente Lag 1],
+			    "Lag 3 dias", [Variação Frio Quente Lag 3],
+			    "Lag 7 dias", [Variação Frio Quente Lag 7],
+			    BLANK()
+			)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 176b3f9b-51e4-472f-9219-cb2138604d93
+
+	measure 'Média Frio por Defasagem' =
+			
+			SWITCH(
+			    SELECTEDVALUE(Defasagem[Defasagem]),
+			    "Mesmo dia", [Média Internações Dias Frios],
+			    "Lag 1 dia", [Média Internações Frio Lag 1],
+			    "Lag 3 dias", [Média Internações Frio Lag 3],
+			    "Lag 7 dias", [Média Internações Frio Lag 7],
+			    BLANK()
+			)
+		lineageTag: cf258e05-c283-47a2-866e-7a0957bcbeef
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Média Quente por Defasagem' =
+			
+			SWITCH(
+			    SELECTEDVALUE(Defasagem[Defasagem]),
+			    "Mesmo dia", [Média Internações Dias Quentes],
+			    "Lag 1 dia", [Média Internações Quente Lag 1],
+			    "Lag 3 dias", [Média Internações Quente Lag 3],
+			    "Lag 7 dias", [Média Internações Quente Lag 7],
+			    BLANK()
+			)
+		lineageTag: 6719a070-ac6a-4375-971a-beeeda631dcf
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Maior Variação por Defasagem' =
+			
+			MAXX(
+			    VALUES(Defasagem[Defasagem]),
+			    [Variação por Defasagem]
+			)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 2c125709-3d48-4f04-8781-2c3c03a58e1d
+
+	measure 'Radiação Mínima' =
+			
+			MIN(
+			    fato_municipio_dia[Dados.radiacao_global_dia_kj_m2]
+			)
+		lineageTag: c2995a8d-9056-4f31-bcdc-ecaba68a0c2b
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Radiação Q1' =
+			
+			PERCENTILEX.INC(
+			    FILTER(
+			        fato_municipio_dia,
+			        NOT ISBLANK(
+			            fato_municipio_dia[Dados.radiacao_global_dia_kj_m2]
+			        )
+			    ),
+			    fato_municipio_dia[Dados.radiacao_global_dia_kj_m2],
+			    0.25
+			)
+		lineageTag: ea41efcc-4006-4443-909b-c249fd89cafb
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Radiação Mediana' =
+			
+			PERCENTILEX.INC(
+			    FILTER(
+			        fato_municipio_dia,
+			        NOT ISBLANK(
+			            fato_municipio_dia[Dados.radiacao_global_dia_kj_m2]
+			        )
+			    ),
+			    fato_municipio_dia[Dados.radiacao_global_dia_kj_m2],
+			    0.50
+			)
+		lineageTag: 19e803f7-57ad-4772-8d96-6eba55ec6356
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Radiação Q3' =
+			
+			PERCENTILEX.INC(
+			    FILTER(
+			        fato_municipio_dia,
+			        NOT ISBLANK(
+			            fato_municipio_dia[Dados.radiacao_global_dia_kj_m2]
+			        )
+			    ),
+			    fato_municipio_dia[Dados.radiacao_global_dia_kj_m2],
+			    0.75
+			)
+		lineageTag: 01b1cc2b-f72f-434b-92ec-42a4622ac71f
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Radiação Máxima' =
+			
+			MAX(
+			    fato_municipio_dia[Dados.radiacao_global_dia_kj_m2]
+			)
+		lineageTag: 4da06990-b521-41e8-b880-72b023de1396
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Vento Q1' =
+			
+			PERCENTILEX.INC(
+			    FILTER(
+			        fato_municipio_dia,
+			        NOT ISBLANK(
+			            fato_municipio_dia[Dados.vento_medio_dia_ms]
+			        )
+			    ),
+			    fato_municipio_dia[Dados.vento_medio_dia_ms],
+			    0.25
+			)
+		lineageTag: 36070174-bb4a-4313-b622-d2d479cd47d0
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Vento Mediana' =
+			
+			PERCENTILEX.INC(
+			    FILTER(
+			        fato_municipio_dia,
+			        NOT ISBLANK(
+			            fato_municipio_dia[Dados.vento_medio_dia_ms]
+			        )
+			    ),
+			    fato_municipio_dia[Dados.vento_medio_dia_ms],
+			    0.50
+			)
+		lineageTag: 1fe25622-d00c-4102-8110-4ac44a23ceb2
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Vento Q3' =
+			
+			PERCENTILEX.INC(
+			    FILTER(
+			        fato_municipio_dia,
+			        NOT ISBLANK(
+			            fato_municipio_dia[Dados.vento_medio_dia_ms]
+			        )
+			    ),
+			    fato_municipio_dia[Dados.vento_medio_dia_ms],
+			    0.75
+			)
+		lineageTag: d766b09d-de61-442f-a991-7de46a04ef43
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Pressão Q3' =
+			
+			PERCENTILEX.INC(
+			    FILTER(
+			        fato_municipio_dia,
+			        NOT ISBLANK(
+			            fato_municipio_dia[Dados.pressao_media_dia_mb]
+			        )
+			    ),
+			    fato_municipio_dia[Dados.pressao_media_dia_mb],
+			    0.75
+			)
+		lineageTag: fd7bf6ac-7a29-448d-a509-749d02fa48af
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Pressão Mediana' =
+			
+			PERCENTILEX.INC(
+			    FILTER(
+			        fato_municipio_dia,
+			        NOT ISBLANK(
+			            fato_municipio_dia[Dados.pressao_media_dia_mb]
+			        )
+			    ),
+			    fato_municipio_dia[Dados.pressao_media_dia_mb],
+			    0.50
+			)
+		lineageTag: 469a67a5-ca02-4fcd-aa39-3551ba68a1ff
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Amplitude Pressão' =
+			
+			AVERAGEX(
+			    fato_municipio_dia,
+			    fato_municipio_dia[Dados.pressao_maxima_dia_mb]
+			        - fato_municipio_dia[Dados.pressao_minima_dia_mb]
+			)
+		lineageTag: b4cf2795-27db-4383-be81-bc26ffe7d38f
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Amplitude Pressão Q1' =
+			
+			PERCENTILEX.INC(
+			    FILTER(
+			        fato_municipio_dia,
+			        NOT ISBLANK(fato_municipio_dia[Amplitude Pressão Dia])
+			    ),
+			    fato_municipio_dia[Amplitude Pressão Dia],
+			    0.25
+			)
+		lineageTag: 89bd43e8-10f0-4d5a-a87b-88bab3d19dc1
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Amplitude Pressão Mediana' =
+			
+			PERCENTILEX.INC(
+			    FILTER(
+			        fato_municipio_dia,
+			        NOT ISBLANK(fato_municipio_dia[Amplitude Pressão Dia])
+			    ),
+			    fato_municipio_dia[Amplitude Pressão Dia],
+			    0.50
+			)
+		lineageTag: c0eada70-7304-4b7e-8827-a6031f8aef4f
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Amplitude Pressão Q3' =
+			
+			PERCENTILEX.INC(
+			    FILTER(
+			        fato_municipio_dia,
+			        NOT ISBLANK(fato_municipio_dia[Amplitude Pressão Dia])
+			    ),
+			    fato_municipio_dia[Amplitude Pressão Dia],
+			    0.75
+			)
+		lineageTag: 41fb9179-5933-43f8-bcc8-ca5cf5e44912
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.municipio_dia_id'
+		dataType: string
+		lineageTag: 818dcd9c-2e64-45e4-a383-c943a10a7866
+		summarizeBy: none
+		sourceColumn: Dados.municipio_dia_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.data'
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: b0faa810-d385-44dc-b6ea-b6ceb0a1a520
+		summarizeBy: none
+		sourceColumn: Dados.data
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Dados.codigo_municipio'
+		dataType: string
+		lineageTag: 399792b0-7a4c-42c1-b938-f8d2919d6ce0
+		summarizeBy: none
+		sourceColumn: Dados.codigo_municipio
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.codigo_estacao'
+		dataType: string
+		lineageTag: e09623c3-b557-43ca-98c5-e5426078b067
+		summarizeBy: none
+		sourceColumn: Dados.codigo_estacao
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.qtd_internacoes'
+		dataType: int64
+		formatString: 0
+		lineageTag: 5ab987ae-6f78-4654-ab34-be7b56aa99f2
+		summarizeBy: sum
+		sourceColumn: Dados.qtd_internacoes
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.qtd_obitos'
+		dataType: int64
+		formatString: 0
+		lineageTag: c5e76dfb-e297-4ec4-9c6a-fdc0bb6ac066
+		summarizeBy: sum
+		sourceColumn: Dados.qtd_obitos
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.dias_permanencia_total'
+		dataType: int64
+		formatString: 0
+		lineageTag: f232e2ab-a6c1-4330-acbf-79f9f8d17d2e
+		summarizeBy: sum
+		sourceColumn: Dados.dias_permanencia_total
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.dias_uti_total'
+		dataType: int64
+		formatString: 0
+		lineageTag: 182545c2-38c9-4a0c-9a28-a14db9f9fc08
+		summarizeBy: sum
+		sourceColumn: Dados.dias_uti_total
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.valor_total_internacoes'
+		dataType: decimal
+		formatString: "R$"\ #,0.###############;-"R$"\ #,0.###############;"R$"\ #,0.###############
+		lineageTag: e20f0553-1525-4ddb-a7c0-c19115a0c1f5
+		summarizeBy: sum
+		sourceColumn: Dados.valor_total_internacoes
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"pt-BR"}
+
+	column 'Dados.valor_total_uti'
+		dataType: decimal
+		formatString: "R$"\ #,0.###############;-"R$"\ #,0.###############;"R$"\ #,0.###############
+		lineageTag: 43e1fb77-1d28-4ddf-8221-bc6d888bced4
+		summarizeBy: sum
+		sourceColumn: Dados.valor_total_uti
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"pt-BR"}
+
+	column 'Dados.temperatura_media_dia_c'
+		dataType: double
+		lineageTag: 6d50ed8e-82b5-4d58-bbb0-3f4b00df7162
+		summarizeBy: sum
+		sourceColumn: Dados.temperatura_media_dia_c
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.temperatura_minima_dia_c'
+		dataType: double
+		lineageTag: cd8f03a0-3e7f-4d9c-a16e-94d5005c65b0
+		summarizeBy: sum
+		sourceColumn: Dados.temperatura_minima_dia_c
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.temperatura_maxima_dia_c'
+		dataType: double
+		lineageTag: 34c07a02-0705-4dc6-9111-535e967633d5
+		summarizeBy: sum
+		sourceColumn: Dados.temperatura_maxima_dia_c
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.umidade_media_dia_pct'
+		dataType: double
+		lineageTag: b0146cd5-9e4e-437a-8d07-27be9def40c1
+		summarizeBy: sum
+		sourceColumn: Dados.umidade_media_dia_pct
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.umidade_minima_dia_pct'
+		dataType: double
+		lineageTag: bd9eae03-9800-49e0-88c0-43afb2815f4c
+		summarizeBy: sum
+		sourceColumn: Dados.umidade_minima_dia_pct
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.umidade_maxima_dia_pct'
+		dataType: double
+		lineageTag: 0e67fa49-3b33-4eb8-8839-c0a4fe2aef49
+		summarizeBy: sum
+		sourceColumn: Dados.umidade_maxima_dia_pct
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.precipitacao_dia_mm'
+		dataType: double
+		lineageTag: 12ebffca-cecc-4853-b5bb-e3b8bebedb22
+		summarizeBy: sum
+		sourceColumn: Dados.precipitacao_dia_mm
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.vento_medio_dia_ms'
+		dataType: double
+		lineageTag: 69d0dab0-38f4-45e1-ba0e-5ace5c8efaaa
+		summarizeBy: sum
+		sourceColumn: Dados.vento_medio_dia_ms
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.vento_maximo_dia_ms'
+		dataType: double
+		lineageTag: 34ac496c-b0f8-44a9-8eab-c34118a6fe6e
+		summarizeBy: sum
+		sourceColumn: Dados.vento_maximo_dia_ms
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.qtd_observacoes_inmet'
+		dataType: int64
+		formatString: 0
+		lineageTag: 7d33e5fd-b6c0-410c-b475-4a0904089814
+		summarizeBy: sum
+		sourceColumn: Dados.qtd_observacoes_inmet
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.qtd_obs_temperatura'
+		dataType: int64
+		formatString: 0
+		lineageTag: 1b9fbc10-b948-49f0-b30d-f918b1d992b3
+		summarizeBy: sum
+		sourceColumn: Dados.qtd_obs_temperatura
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.qtd_obs_umidade'
+		dataType: int64
+		formatString: 0
+		lineageTag: fc6986a1-ff00-4de5-92e8-addcba2ef613
+		summarizeBy: sum
+		sourceColumn: Dados.qtd_obs_umidade
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.qtd_obs_precipitacao'
+		dataType: int64
+		formatString: 0
+		lineageTag: 57a00b9f-32a0-4e07-84dc-7d541eb1c8c9
+		summarizeBy: sum
+		sourceColumn: Dados.qtd_obs_precipitacao
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.qtd_obs_vento'
+		dataType: int64
+		formatString: 0
+		lineageTag: 94f7d5bf-e430-4767-9b02-f0e928185275
+		summarizeBy: sum
+		sourceColumn: Dados.qtd_obs_vento
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.meteorologia_disponivel'
+		dataType: int64
+		formatString: 0
+		lineageTag: dd8eb6bf-eed1-4a6d-b4c2-8e73fbd9993e
+		summarizeBy: sum
+		sourceColumn: Dados.meteorologia_disponivel
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.motivo_sem_meteorologia'
+		dataType: string
+		lineageTag: 01ca5d52-956b-4d39-8cb5-38313c06d2eb
+		summarizeBy: none
+		sourceColumn: Dados.motivo_sem_meteorologia
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.radiacao_global_dia_kj_m2'
+		dataType: double
+		lineageTag: 29549a2c-7a59-4b49-b905-31333b5811b1
+		summarizeBy: sum
+		sourceColumn: Dados.radiacao_global_dia_kj_m2
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.qtd_obs_radiacao'
+		dataType: int64
+		formatString: 0
+		lineageTag: 00903032-4912-43e2-846d-58bfbb2ab333
+		summarizeBy: sum
+		sourceColumn: Dados.qtd_obs_radiacao
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.pressao_media_dia_mb'
+		dataType: double
+		lineageTag: 912a002b-bafc-4e36-b53b-f26953a1b049
+		summarizeBy: sum
+		sourceColumn: Dados.pressao_media_dia_mb
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.pressao_minima_dia_mb'
+		dataType: double
+		lineageTag: 9852293a-33d7-4574-8c44-06348eaea317
+		summarizeBy: sum
+		sourceColumn: Dados.pressao_minima_dia_mb
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.pressao_maxima_dia_mb'
+		dataType: double
+		lineageTag: 3db6bd37-88a2-4fd4-8c81-43ba17272cac
+		summarizeBy: sum
+		sourceColumn: Dados.pressao_maxima_dia_mb
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.qtd_obs_pressao'
+		dataType: int64
+		formatString: 0
+		lineageTag: 58ccb9c4-d43e-4354-99d3-c634018c1dd3
+		summarizeBy: sum
+		sourceColumn: Dados.qtd_obs_pressao
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.orvalho_medio_dia_c'
+		dataType: double
+		lineageTag: 015dd414-9720-4690-a05d-575ac2449b3e
+		summarizeBy: sum
+		sourceColumn: Dados.orvalho_medio_dia_c
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.orvalho_minimo_dia_c'
+		dataType: double
+		lineageTag: 2ba1d5e9-dfb4-4684-8ee9-b0427e6cdc98
+		summarizeBy: sum
+		sourceColumn: Dados.orvalho_minimo_dia_c
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.orvalho_maximo_dia_c'
+		dataType: double
+		lineageTag: 6a952660-5fac-4eed-8f4d-e6c2ab7d4afa
+		summarizeBy: sum
+		sourceColumn: Dados.orvalho_maximo_dia_c
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.qtd_obs_orvalho'
+		dataType: int64
+		formatString: 0
+		lineageTag: 61a96a27-87d2-4dc0-b2ab-d24cef6244fd
+		summarizeBy: sum
+		sourceColumn: Dados.qtd_obs_orvalho
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.rajada_maxima_dia_ms'
+		dataType: double
+		lineageTag: 5759fabe-023a-4adf-a4f5-f03ebd1ae091
+		summarizeBy: sum
+		sourceColumn: Dados.rajada_maxima_dia_ms
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.qtd_obs_rajada'
+		dataType: int64
+		formatString: 0
+		lineageTag: ffd76669-a020-4de6-a7df-1a368ec30e20
+		summarizeBy: sum
+		sourceColumn: Dados.qtd_obs_rajada
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.temperatura_media_lag_1d'
+		dataType: double
+		lineageTag: 22220a56-e954-40de-baa3-6b7e8a1874f6
+		summarizeBy: sum
+		sourceColumn: Dados.temperatura_media_lag_1d
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.temperatura_media_lag_3d'
+		dataType: double
+		lineageTag: adecc928-74a7-456e-bc5f-c225afc20065
+		summarizeBy: sum
+		sourceColumn: Dados.temperatura_media_lag_3d
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.temperatura_media_lag_7d'
+		dataType: double
+		lineageTag: ab2ce768-9497-4c22-a47b-1df2f8d2aee3
+		summarizeBy: sum
+		sourceColumn: Dados.temperatura_media_lag_7d
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Faixa Temperatura' =
+			
+			VAR Temperatura =
+			    fato_municipio_dia[Dados.temperatura_media_dia_c]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(Temperatura), "Sem dado",
+			        Temperatura < 15, "< 15 °C",
+			        Temperatura < 20, "15–19,9 °C",
+			        Temperatura < 25, "20–24,9 °C",
+			        Temperatura < 30, "25–29,9 °C",
+			        "≥ 30 °C"
+			    )
+		lineageTag: b0f965b7-1591-4df6-8dcd-ba4b9f01121c
+		summarizeBy: none
+		sortByColumn: 'Faixa Temperatura Ordem'
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Ordem Faixa Temperatura' =
+			
+			VAR Temperatura =
+			    fato_municipio_dia[Dados.temperatura_media_dia_c]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(Temperatura), 6,
+			        Temperatura < 15, 1,
+			        Temperatura < 20, 2,
+			        Temperatura < 25, 3,
+			        Temperatura < 30, 4,
+			        5
+			    )
+		formatString: 0
+		lineageTag: 786bb48a-b2b0-49b2-b54e-d14cec3d65c7
+		summarizeBy: sum
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Faixa Temperatura Ordem' =
+			
+			VAR Temperatura =
+			    fato_municipio_dia[Dados.temperatura_media_dia_c]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(Temperatura), 99,
+			        Temperatura < 15, 1,
+			        Temperatura < 20, 2,
+			        Temperatura < 25, 3,
+			        Temperatura < 30, 4,
+			        5
+			    )
+		formatString: 0
+		lineageTag: 3e4f58f1-80f4-4286-b098-71de5234df67
+		summarizeBy: sum
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Faixa Umidade Ordem' =
+			
+			VAR Umidade =
+			    fato_municipio_dia[Dados.umidade_media_dia_pct]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(Umidade), 99,
+			        Umidade < 50, 1,
+			        Umidade < 60, 2,
+			        Umidade < 70, 3,
+			        Umidade < 80, 4,
+			        5
+			    )
+		formatString: 0
+		lineageTag: 7cd6d818-27a1-42d0-a5bc-9a71b1c0954d
+		summarizeBy: sum
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Faixa Umidade' =
+			
+			VAR Umidade =
+			    fato_municipio_dia[Dados.umidade_media_dia_pct]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(Umidade), "Sem dados",
+			        Umidade < 50, "< 50%",
+			        Umidade < 60, "50 a 59,9%",
+			        Umidade < 70, "60 a 69,9%",
+			        Umidade < 80, "70 a 79,9%",
+			        ">= 80%"
+			    )
+		lineageTag: 0b818d85-06cf-4cc0-9984-a4b73e6bbff6
+		summarizeBy: none
+		sortByColumn: 'Faixa Umidade Ordem'
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Faixa Precipitação Ordem' =
+			
+			VAR Chuva =
+			    fato_municipio_dia[Dados.precipitacao_dia_mm]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(Chuva), 99,
+			        Chuva = 0, 1,
+			        Chuva <= 5, 2,
+			        Chuva <= 20, 3,
+			        Chuva <= 50, 4,
+			        5
+			    )
+		formatString: 0
+		lineageTag: d79ec679-afc4-455a-9aab-45309b07b120
+		summarizeBy: sum
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Faixa Precipitação' =
+			
+			VAR Chuva =
+			    fato_municipio_dia[Dados.precipitacao_dia_mm]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(Chuva), "Sem dados",
+			        Chuva = 0, "Sem chuva",
+			        Chuva <= 5, "0,1 a 5 mm",
+			        Chuva <= 20, "5,1 a 20 mm",
+			        Chuva <= 50, "20,1 a 50 mm",
+			        "> 50 mm"
+			    )
+		lineageTag: b9ed9ea7-aec6-4978-86a9-499aadd40046
+		summarizeBy: none
+		sortByColumn: 'Faixa Precipitação Ordem'
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Faixa Radiação' =
+			
+			VAR Radiacao =
+			    fato_municipio_dia[Dados.radiacao_global_dia_kj_m2]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(Radiacao), "Sem dados",
+			        Radiacao <= 12350, "Baixa",
+			        Radiacao <= 16880, "Média-baixa",
+			        Radiacao <= 21560, "Média-alta",
+			        "Alta"
+			    )
+		lineageTag: 274b643a-7e79-47cb-8bb0-62072342f83e
+		summarizeBy: none
+		sortByColumn: 'Faixa Radiação Ordem'
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Faixa Radiação Ordem' =
+			
+			VAR Radiacao =
+			    fato_municipio_dia[Dados.radiacao_global_dia_kj_m2]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(Radiacao), 99,
+			        Radiacao <= 12350, 1,
+			        Radiacao <= 16880, 2,
+			        Radiacao <= 21560, 3,
+			        4
+			    )
+		formatString: 0
+		lineageTag: 0a499c97-7ee2-436b-8eeb-268362162709
+		summarizeBy: sum
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Faixa Vento' =
+			
+			VAR Vento =
+			    fato_municipio_dia[Dados.vento_medio_dia_ms]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(Vento), "Sem dados",
+			        Vento <= 1.07, "Baixo",
+			        Vento <= 1.55, "Médio-baixo",
+			        Vento <= 2.15, "Médio-alto",
+			        "Alto"
+			    )
+		lineageTag: 60f9d298-fda8-42b1-8c81-a8a5e961525c
+		summarizeBy: none
+		sortByColumn: 'Faixa Vento Ordem'
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Faixa Vento Ordem' =
+			
+			VAR Vento =
+			    fato_municipio_dia[Dados.vento_medio_dia_ms]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(Vento), 99,
+			        Vento <= 1.07, 1,
+			        Vento <= 1.55, 2,
+			        Vento <= 2.15, 3,
+			        4
+			    )
+		formatString: 0
+		lineageTag: 74f0f151-1036-47b1-ae0d-2ca65469654f
+		summarizeBy: sum
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Amplitude Pressão Dia' =
+			
+			fato_municipio_dia[Dados.pressao_maxima_dia_mb]
+			    - fato_municipio_dia[Dados.pressao_minima_dia_mb]
+		lineageTag: 2d0f1513-d5bb-4641-a1a1-6647e018f3eb
+		summarizeBy: sum
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Faixa Amplitude Pressão' =
+			
+			VAR Amplitude =
+			    fato_municipio_dia[Amplitude Pressão Dia]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(Amplitude), "Sem dados",
+			        Amplitude <= 3.40, "Baixa",
+			        Amplitude <= 4.00, "Média-baixa",
+			        Amplitude <= 4.60, "Média-alta",
+			        "Alta"
+			    )
+		lineageTag: 326ae381-9fa9-47d0-a688-3d98f84cc5e8
+		summarizeBy: none
+		sortByColumn: 'Faixa Amplitude Pressão Ordem'
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Faixa Amplitude Pressão Ordem' =
+			
+			VAR Amplitude =
+			    fato_municipio_dia[Amplitude Pressão Dia]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(Amplitude), 99,
+			        Amplitude <= 3.40, 1,
+			        Amplitude <= 4.00, 2,
+			        Amplitude <= 4.60, 3,
+			        4
+			    )
+		formatString: 0
+		lineageTag: 603584dd-9bd0-4bf2-b0a2-2d778db5a336
+		summarizeBy: sum
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fato_municipio_dia = m
+		mode: import
+		source =
+				let
+				    Fonte = Folder.Files("C:\Users\Guilherme\Desktop\TCC\data\consumption\fato_municipio_dia"),
+				    #"Linhas Filtradas" = Table.SelectRows(Fonte, each ([Extension] = ".parquet")),
+				    #"Personalização Adicionada" = Table.AddColumn(#"Linhas Filtradas", "Dados", each Parquet.Document([Content])),
+				    #"Dados Expandido" = Table.ExpandTableColumn(#"Personalização Adicionada", "Dados", {"municipio_dia_id", "data", "codigo_municipio", "codigo_estacao", "qtd_internacoes", "qtd_obitos", "dias_permanencia_total", "dias_uti_total", "valor_total_internacoes", "valor_total_uti", "temperatura_media_dia_c", "temperatura_minima_dia_c", "temperatura_maxima_dia_c", "umidade_media_dia_pct", "umidade_minima_dia_pct", "umidade_maxima_dia_pct", "precipitacao_dia_mm", "vento_medio_dia_ms", "vento_maximo_dia_ms", "qtd_observacoes_inmet", "qtd_obs_temperatura", "qtd_obs_umidade", "qtd_obs_precipitacao", "qtd_obs_vento", "meteorologia_disponivel", "motivo_sem_meteorologia", "radiacao_global_dia_kj_m2", "qtd_obs_radiacao", "pressao_media_dia_mb", "pressao_minima_dia_mb", "pressao_maxima_dia_mb", "qtd_obs_pressao", "orvalho_medio_dia_c", "orvalho_minimo_dia_c", "orvalho_maximo_dia_c", "qtd_obs_orvalho", "rajada_maxima_dia_ms", "qtd_obs_rajada", "temperatura_media_lag_1d", "temperatura_media_lag_3d", "temperatura_media_lag_7d"}, {"Dados.municipio_dia_id", "Dados.data", "Dados.codigo_municipio", "Dados.codigo_estacao", "Dados.qtd_internacoes", "Dados.qtd_obitos", "Dados.dias_permanencia_total", "Dados.dias_uti_total", "Dados.valor_total_internacoes", "Dados.valor_total_uti", "Dados.temperatura_media_dia_c", "Dados.temperatura_minima_dia_c", "Dados.temperatura_maxima_dia_c", "Dados.umidade_media_dia_pct", "Dados.umidade_minima_dia_pct", "Dados.umidade_maxima_dia_pct", "Dados.precipitacao_dia_mm", "Dados.vento_medio_dia_ms", "Dados.vento_maximo_dia_ms", "Dados.qtd_observacoes_inmet", "Dados.qtd_obs_temperatura", "Dados.qtd_obs_umidade", "Dados.qtd_obs_precipitacao", "Dados.qtd_obs_vento", "Dados.meteorologia_disponivel", "Dados.motivo_sem_meteorologia", "Dados.radiacao_global_dia_kj_m2", "Dados.qtd_obs_radiacao", "Dados.pressao_media_dia_mb", "Dados.pressao_minima_dia_mb", "Dados.pressao_maxima_dia_mb", "Dados.qtd_obs_pressao", "Dados.orvalho_medio_dia_c", "Dados.orvalho_minimo_dia_c", "Dados.orvalho_maximo_dia_c", "Dados.qtd_obs_orvalho", "Dados.rajada_maxima_dia_ms", "Dados.qtd_obs_rajada", "Dados.temperatura_media_lag_1d", "Dados.temperatura_media_lag_3d", "Dados.temperatura_media_lag_7d"}),
+				    #"Colunas Removidas" = Table.RemoveColumns(#"Dados Expandido",{"Content", "Name", "Extension", "Date accessed", "Date modified", "Date created", "Attributes", "Folder Path"}),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Colunas Removidas",{{"Dados.municipio_dia_id", type text}, {"Dados.data", type date}, {"Dados.codigo_municipio", type text}, {"Dados.codigo_estacao", type text}, {"Dados.qtd_internacoes", Int64.Type}, {"Dados.qtd_obitos", Int64.Type}, {"Dados.dias_permanencia_total", Int64.Type}, {"Dados.dias_uti_total", Int64.Type}, {"Dados.valor_total_internacoes", Currency.Type}, {"Dados.valor_total_uti", Currency.Type}, {"Dados.temperatura_media_dia_c", type number}, {"Dados.temperatura_minima_dia_c", type number}, {"Dados.temperatura_maxima_dia_c", type number}, {"Dados.umidade_media_dia_pct", type number}, {"Dados.umidade_minima_dia_pct", type number}, {"Dados.umidade_maxima_dia_pct", type number}, {"Dados.precipitacao_dia_mm", type number}, {"Dados.vento_medio_dia_ms", type number}, {"Dados.vento_maximo_dia_ms", type number}, {"Dados.qtd_observacoes_inmet", Int64.Type}, {"Dados.qtd_obs_temperatura", Int64.Type}, {"Dados.qtd_obs_umidade", Int64.Type}, {"Dados.qtd_obs_precipitacao", Int64.Type}, {"Dados.qtd_obs_vento", Int64.Type}, {"Dados.meteorologia_disponivel", Int64.Type}, {"Dados.motivo_sem_meteorologia", type text}, {"Dados.radiacao_global_dia_kj_m2", type number}, {"Dados.qtd_obs_radiacao", Int64.Type}, {"Dados.pressao_media_dia_mb", type number}, {"Dados.pressao_minima_dia_mb", type number}, {"Dados.pressao_maxima_dia_mb", type number}, {"Dados.qtd_obs_pressao", Int64.Type}, {"Dados.orvalho_medio_dia_c", type number}, {"Dados.orvalho_minimo_dia_c", type number}, {"Dados.orvalho_maximo_dia_c", type number}, {"Dados.qtd_obs_orvalho", Int64.Type}, {"Dados.rajada_maxima_dia_ms", type number}, {"Dados.qtd_obs_rajada", Int64.Type}, {"Dados.temperatura_media_lag_1d", type number}, {"Dados.temperatura_media_lag_3d", type number}, {"Dados.temperatura_media_lag_7d", type number}})
+				in
+				    #"Tipo Alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

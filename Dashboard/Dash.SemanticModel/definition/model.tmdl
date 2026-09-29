@@ -1,0 +1,28 @@
+model Model
+	culture: pt-BR
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: pt-BR
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation PBI_QueryOrder = ["fato_municipio_dia","fato_municipio_dia_cid","dim_municipio","dim_cid","dim_tempo","dim_estacao"]
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBIDesktopVersion = 2.146.1133.0 (25.08)+c8010d55d1db76eda03c968b03481610e96a1ef7
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table fato_municipio_dia
+ref table DateTableTemplate_31dd1c5f-1def-45c0-8bd8-a7889e411e09
+ref table fato_municipio_dia_cid
+ref table LocalDateTable_523d242e-8f03-4906-8d2a-68d278ccf76a
+ref table dim_municipio
+ref table dim_cid
+ref table dim_tempo
+ref table dim_estacao
+ref table Defasagem
+
+ref cultureInfo pt-BR
+

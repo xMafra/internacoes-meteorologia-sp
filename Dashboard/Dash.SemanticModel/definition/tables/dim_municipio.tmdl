@@ -1,0 +1,109 @@
+table dim_municipio
+	lineageTag: de74c202-572b-4ea7-bb86-80299b6f6be4
+
+	column 'Dados.codigo_municipio'
+		dataType: string
+		lineageTag: a77106c8-05e8-431b-b73c-f7b17720ae9d
+		summarizeBy: none
+		sourceColumn: Dados.codigo_municipio
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.codigo_municipio_sih'
+		dataType: string
+		lineageTag: a3456d7b-9f6d-453c-9e51-641cd8f13b29
+		summarizeBy: none
+		sourceColumn: Dados.codigo_municipio_sih
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.nome_municipio'
+		dataType: string
+		lineageTag: 7c35fa1e-e8b8-4797-b677-15d4a11e701f
+		summarizeBy: none
+		sourceColumn: Dados.nome_municipio
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.sigla_uf'
+		dataType: string
+		lineageTag: 2ed9b444-fe62-4f53-8a7f-984e523c403d
+		summarizeBy: none
+		sourceColumn: Dados.sigla_uf
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.area_km2'
+		dataType: double
+		lineageTag: be7192cd-f738-4ba0-a8b9-11f5d55f874e
+		summarizeBy: none
+		sourceColumn: Dados.area_km2
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.latitude_municipio'
+		dataType: double
+		lineageTag: 96c79b16-3989-4e62-bff5-24cb9971ff33
+		summarizeBy: none
+		sourceColumn: Dados.latitude_municipio
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.longitude_municipio'
+		dataType: double
+		lineageTag: f7d371c6-d2b8-4122-b4b0-b85fc8a251c0
+		summarizeBy: none
+		sourceColumn: Dados.longitude_municipio
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.codigo_estacao_referencia'
+		dataType: string
+		lineageTag: b2b6202a-5eca-4413-a017-e170227bd2a3
+		summarizeBy: none
+		sourceColumn: Dados.codigo_estacao_referencia
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.distancia_estacao_km'
+		dataType: double
+		lineageTag: a514ad6d-1a67-4a23-9b88-3c056123ef7b
+		summarizeBy: none
+		sourceColumn: Dados.distancia_estacao_km
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Dados.ano_referencia_ibge'
+		dataType: int64
+		formatString: 0
+		lineageTag: e6c5552d-0280-439c-918f-e205f75f0e87
+		summarizeBy: none
+		sourceColumn: Dados.ano_referencia_ibge
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_municipio = m
+		mode: import
+		source =
+				let
+				    Fonte = Folder.Files("C:\Users\Guilherme\Desktop\TCC\data\consumption\dim_municipio"),
+				    #"Linhas Filtradas" = Table.SelectRows(Fonte, each ([Extension] = ".parquet")),
+				    #"Personalização Adicionada" = Table.AddColumn(#"Linhas Filtradas", "Dados", each Parquet.Document([Content])),
+				    #"Dados Expandido" = Table.ExpandTableColumn(#"Personalização Adicionada", "Dados", {"codigo_municipio", "codigo_municipio_sih", "nome_municipio", "sigla_uf", "area_km2", "latitude_municipio", "longitude_municipio", "codigo_estacao_referencia", "distancia_estacao_km", "ano_referencia_ibge"}, {"Dados.codigo_municipio", "Dados.codigo_municipio_sih", "Dados.nome_municipio", "Dados.sigla_uf", "Dados.area_km2", "Dados.latitude_municipio", "Dados.longitude_municipio", "Dados.codigo_estacao_referencia", "Dados.distancia_estacao_km", "Dados.ano_referencia_ibge"}),
+				    #"Colunas Removidas" = Table.RemoveColumns(#"Dados Expandido",{"Content", "Name", "Extension", "Date accessed", "Date modified", "Date created", "Attributes", "Folder Path"}),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Colunas Removidas",{{"Dados.codigo_municipio", type text}, {"Dados.codigo_municipio_sih", type text}, {"Dados.nome_municipio", type text}, {"Dados.sigla_uf", type text}, {"Dados.area_km2", type number}, {"Dados.latitude_municipio", type number}, {"Dados.longitude_municipio", type number}, {"Dados.codigo_estacao_referencia", type text}, {"Dados.distancia_estacao_km", type number}, {"Dados.ano_referencia_ibge", Int64.Type}})
+				in
+				    #"Tipo Alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

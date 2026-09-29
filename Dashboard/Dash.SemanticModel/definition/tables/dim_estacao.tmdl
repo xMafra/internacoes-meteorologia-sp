@@ -1,0 +1,82 @@
+table dim_estacao
+	lineageTag: 7e50c369-ce69-4e0e-8694-e232122488c4
+
+	column codigo_estacao
+		dataType: string
+		lineageTag: 787e4fbe-3ea0-4f27-8206-782ec22c24c4
+		summarizeBy: none
+		sourceColumn: codigo_estacao
+
+		annotation SummarizationSetBy = Automatic
+
+	column nome_estacao
+		dataType: string
+		lineageTag: 745f8958-f42a-43b9-b401-9f939cfe454c
+		summarizeBy: none
+		sourceColumn: nome_estacao
+
+		annotation SummarizationSetBy = Automatic
+
+	column latitude_estacao
+		dataType: double
+		lineageTag: 125996c4-fbc1-44c9-8691-137a044e50bd
+		summarizeBy: none
+		sourceColumn: latitude_estacao
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column longitude_estacao
+		dataType: double
+		lineageTag: ed987599-315d-4d88-8c01-18ed2575ddff
+		summarizeBy: none
+		sourceColumn: longitude_estacao
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column uf
+		dataType: string
+		lineageTag: 4c3657f5-5f03-4fea-a845-c24120a0f5f3
+		summarizeBy: none
+		sourceColumn: uf
+
+		annotation SummarizationSetBy = Automatic
+
+	column regiao
+		dataType: string
+		lineageTag: dd168a62-c5c7-45ea-b875-60f5d02fcb71
+		summarizeBy: none
+		sourceColumn: regiao
+
+		annotation SummarizationSetBy = Automatic
+
+	column altitude_m
+		dataType: double
+		lineageTag: bb35935f-9306-4764-996d-31035a8a6a69
+		summarizeBy: none
+		sourceColumn: altitude_m
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition dim_estacao = m
+		mode: import
+		source =
+				let
+				    Fonte = Folder.Files("C:\Users\Guilherme\Desktop\TCC\data\consumption\dim_estacao"),
+				    #"Linhas Filtradas" = Table.SelectRows(Fonte, each ([Extension] = ".parquet")),
+				    #"Personalização Adicionada" = Table.AddColumn(#"Linhas Filtradas", "Dados", each Parquet.Document([Content])),
+				    #"Dados Expandido" = Table.ExpandTableColumn(#"Personalização Adicionada", "Dados", {"codigo_estacao", "nome_estacao", "latitude_estacao", "longitude_estacao", "uf", "regiao", "altitude_m"}, {"codigo_estacao", "nome_estacao", "latitude_estacao", "longitude_estacao", "uf", "regiao", "altitude_m"}),
+				    #"Colunas Removidas" = Table.RemoveColumns(#"Dados Expandido",{"Content", "Name", "Extension", "Date accessed", "Date modified", "Date created", "Attributes", "Folder Path"}),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Colunas Removidas",{{"codigo_estacao", type text}, {"nome_estacao", type text}, {"latitude_estacao", type number}, {"longitude_estacao", type number}, {"uf", type text}, {"regiao", type text}, {"altitude_m", type number}})
+				in
+				    #"Tipo Alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

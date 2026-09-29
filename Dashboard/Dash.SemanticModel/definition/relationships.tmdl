@@ -1,0 +1,25 @@
+relationship a18b0cc4-b74a-4e90-a2fc-dbcc51568ee6
+	joinOnDateBehavior: datePartOnly
+	fromColumn: fato_municipio_dia_cid.'Dados.data'
+	toColumn: LocalDateTable_523d242e-8f03-4906-8d2a-68d278ccf76a.Date
+
+relationship 09dfaffc-a82a-d923-5443-cd832e71b68a
+	fromColumn: fato_municipio_dia.'Dados.codigo_municipio'
+	toColumn: dim_municipio.'Dados.codigo_municipio'
+
+relationship d0fa44af-6a5b-5a8b-41ad-6ee8a63a3f6f
+	fromColumn: fato_municipio_dia.'Dados.data'
+	toColumn: dim_tempo.data
+
+relationship b4bdcb43-2a6d-60f3-610d-950986b98a11
+	fromColumn: fato_municipio_dia.'Dados.codigo_estacao'
+	toColumn: dim_estacao.codigo_estacao
+
+relationship b3c87cb7-ea82-6fe1-8401-8f7706299f6f
+	fromColumn: fato_municipio_dia_cid.'Dados.municipio_dia_id'
+	toColumn: fato_municipio_dia.'Dados.municipio_dia_id'
+
+relationship 0c350809-e753-9b29-0802-6c2a46a3c484
+	fromColumn: fato_municipio_dia_cid.'Dados.codigo_categoria'
+	toColumn: dim_cid.codigo_categoria
+

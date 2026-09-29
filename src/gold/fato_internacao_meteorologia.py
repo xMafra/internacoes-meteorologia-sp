@@ -33,6 +33,9 @@
 #
 # ==============================================================
 
+from time import perf_counter
+
+from pyspark import StorageLevel
 from pyspark.sql import SparkSession
 
 from pyspark.sql.functions import (
@@ -521,6 +524,8 @@ print(
 # 4. PREPARAÇÃO DA SILVER INMET
 # ==============================================================
 
+inicio_preparacao_inmet = perf_counter()
+
 df_inmet = (
     df_inmet
 
@@ -546,9 +551,17 @@ df_inmet = (
 )
 
 
+# A primeira contagem de chaves inválidas materializa o INMET preparado.
+# Somente a dimensão é persistida; a fato permanece sem persistência.
+inicio_reutilizacao_inmet = perf_counter()
+df_inmet = df_inmet.persist(StorageLevel.MEMORY_AND_DISK)
+
+
 # ==============================================================
 # 5. VALIDAÇÃO DA CHAVE DO INMET
 # ==============================================================
+
+inicio_validacoes_inmet = perf_counter()
 
 print(
     "\nValidando chave codigo_estacao + data do INMET..."
@@ -575,6 +588,12 @@ chaves_inmet_invalidas = (
         ).isNull()
     )
     .count()
+)
+
+
+print(
+    "[PERFORMANCE] INMET preparação/materialização: "
+    f"{perf_counter() - inicio_preparacao_inmet:.3f} segundos"
 )
 
 
@@ -771,6 +790,12 @@ print(
 )
 
 
+print(
+    "[PERFORMANCE] INMET validações (chave, período e estações): "
+    f"{perf_counter() - inicio_validacoes_inmet:.3f} segundos"
+)
+
+
 # ==============================================================
 # 7. PREPARAÇÃO DO DATAFRAME METEOROLÓGICO PARA O JOIN
 # ==============================================================
@@ -853,6 +878,8 @@ print(
 # A Silver INMET Diário possui apenas 43.840 registros.
 # Broadcast evita shuffle desnecessário da fato com 8,4 milhões
 # de internações.
+
+inicio_join_meteorologico = perf_counter()
 
 df_integrada = (
     df_fato
@@ -1131,6 +1158,12 @@ estatisticas_join = (
     )
 
     .collect()[0]
+)
+
+
+print(
+    "[PERFORMANCE] Join meteorológico (até agregação de validação): "
+    f"{perf_counter() - inicio_join_meteorologico:.3f} segundos"
 )
 
 
@@ -1674,6 +1707,16 @@ print(
     .parquet(
         GOLD_FATO_INTERNACAO_METEOROLOGIA
     )
+)
+
+
+# A escrita é a última action que consome a linhagem do INMET.
+# As validações seguintes releem a Gold gravada, sem reutilizar o join.
+fim_reutilizacao_inmet = perf_counter()
+df_inmet.unpersist()
+print(
+    "[PERFORMANCE] INMET reutilização total (persistência até escrita): "
+    f"{fim_reutilizacao_inmet - inicio_reutilizacao_inmet:.3f} segundos"
 )
 
 

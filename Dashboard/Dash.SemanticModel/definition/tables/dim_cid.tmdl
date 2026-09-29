@@ -1,0 +1,84 @@
+table dim_cid
+	lineageTag: add48709-a763-4c7f-a06a-e252c976b16c
+
+	column codigo_categoria
+		dataType: string
+		lineageTag: 95d067a7-95b4-4860-a106-a3fcbf151b89
+		summarizeBy: none
+		sourceColumn: codigo_categoria
+
+		annotation SummarizationSetBy = Automatic
+
+	column descricao_categoria
+		dataType: string
+		lineageTag: 6b8e5584-52fa-44c1-80e1-d69d244fe6c6
+		summarizeBy: none
+		sourceColumn: descricao_categoria
+
+		annotation SummarizationSetBy = Automatic
+
+	column cat_inicial_grupo
+		dataType: string
+		lineageTag: 603407b0-ecdd-4170-963f-de2eae3b514a
+		summarizeBy: none
+		sourceColumn: cat_inicial_grupo
+
+		annotation SummarizationSetBy = Automatic
+
+	column cat_final_grupo
+		dataType: string
+		lineageTag: b6901c36-5740-44ab-9c58-6db2a7189228
+		summarizeBy: none
+		sourceColumn: cat_final_grupo
+
+		annotation SummarizationSetBy = Automatic
+
+	column codigo_grupo
+		dataType: string
+		lineageTag: 30ef5354-721a-4289-9867-8405da848b29
+		summarizeBy: none
+		sourceColumn: codigo_grupo
+
+		annotation SummarizationSetBy = Automatic
+
+	column descricao_grupo
+		dataType: string
+		lineageTag: 65b9d901-d52d-480d-8cb8-ad9d5e0272f2
+		summarizeBy: none
+		sourceColumn: descricao_grupo
+
+		annotation SummarizationSetBy = Automatic
+
+	column codigo_capitulo
+		dataType: string
+		lineageTag: 4ab0fe1f-edaf-4cfb-9cc9-9b427c5f1b76
+		summarizeBy: none
+		sourceColumn: codigo_capitulo
+
+		annotation SummarizationSetBy = Automatic
+
+	column descricao_capitulo
+		dataType: string
+		lineageTag: 3ec931ff-68ad-4cf0-ab7a-ae96431914a0
+		summarizeBy: none
+		sourceColumn: descricao_capitulo
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_cid = m
+		mode: import
+		source =
+				let
+				    Fonte = Folder.Files("C:\Users\Guilherme\Desktop\TCC\data\consumption\dim_cid"),
+				    #"Linhas Filtradas" = Table.SelectRows(Fonte, each ([Extension] = ".parquet")),
+				    #"Personalização Adicionada" = Table.AddColumn(#"Linhas Filtradas", "Dados", each Parquet.Document([Content])),
+				    #"Dados Expandido" = Table.ExpandTableColumn(#"Personalização Adicionada", "Dados", {"codigo_categoria", "descricao_categoria", "cat_inicial_grupo", "cat_final_grupo", "codigo_grupo", "descricao_grupo", "codigo_capitulo", "descricao_capitulo"}, {"codigo_categoria", "descricao_categoria", "cat_inicial_grupo", "cat_final_grupo", "codigo_grupo", "descricao_grupo", "codigo_capitulo", "descricao_capitulo"}),
+				    #"Colunas Removidas" = Table.RemoveColumns(#"Dados Expandido",{"Content", "Name", "Extension", "Date accessed", "Date modified", "Date created", "Attributes", "Folder Path"}),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Colunas Removidas",{{"codigo_categoria", type text}, {"descricao_categoria", type text}, {"cat_inicial_grupo", type text}, {"cat_final_grupo", type text}, {"codigo_grupo", type text}, {"descricao_grupo", type text}, {"codigo_capitulo", type text}, {"descricao_capitulo", type text}})
+				in
+				    #"Tipo Alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

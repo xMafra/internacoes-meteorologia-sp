@@ -1,0 +1,192 @@
+table fato_municipio_dia_cid
+	lineageTag: 7bb38676-888d-4ccb-9615-b765009edb69
+
+	measure 'Internações CID Dias Frios' =
+			
+			CALCULATE(
+			    [Total Internações CID],
+			    fato_municipio_dia[Dados.temperatura_media_dia_c] < 20
+			)
+		formatString: 0
+		lineageTag: bbe2cc20-2eb5-410e-8d42-955909e7702d
+
+	measure 'Internações CID Dias Quentes' =
+			
+			CALCULATE(
+			    [Total Internações CID],
+			    fato_municipio_dia[Dados.temperatura_media_dia_c] >= 25
+			)
+		formatString: 0
+		lineageTag: 31dd58b1-3539-4292-931f-7eb5595bc55e
+
+	measure 'Média Internações CID Dias Frios' =
+			
+			DIVIDE(
+			    [Internações CID Dias Frios],
+			    [Município-Dias Frios],
+			    BLANK()
+			)
+		lineageTag: f2a10f81-f14b-4f74-9548-5bd962101c5b
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Média Internações CID Dias Quentes' =
+			
+			DIVIDE(
+			    [Internações CID Dias Quentes],
+			    [Município-Dias Quentes],
+			    BLANK()
+			)
+		lineageTag: 3632f05f-5d6f-4375-95ee-cd29d74c4499
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Variação Percentual CID Frio Quente' =
+			
+			DIVIDE(
+			    [Média Internações CID Dias Frios]
+			        - [Média Internações CID Dias Quentes],
+			    [Média Internações CID Dias Quentes],
+			    BLANK()
+			)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 1721b130-f2e2-4026-b218-e1bb45883195
+
+	measure 'Internações CID Frio Quente' =
+			
+			[Internações CID Dias Frios]
+			    + [Internações CID Dias Quentes]
+		formatString: 0
+		lineageTag: 7fd6c8fc-6778-44e6-bd38-2d50fa89e7c5
+
+	column 'Dados.municipio_dia_id'
+		dataType: string
+		lineageTag: 4ecd119a-ca00-4a20-b877-929c83df8685
+		summarizeBy: none
+		sourceColumn: Dados.municipio_dia_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.data'
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 8086735d-4510-4703-9039-dfe85f6a8aea
+		summarizeBy: none
+		sourceColumn: Dados.data
+
+		variation Variation
+			isDefault
+			relationship: a18b0cc4-b74a-4e90-a2fc-dbcc51568ee6
+			defaultHierarchy: LocalDateTable_523d242e-8f03-4906-8d2a-68d278ccf76a.'Hierarquia de datas'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Dados.codigo_municipio'
+		dataType: string
+		lineageTag: 423cb3b8-e137-4ddb-9fa1-4523e2aa22bf
+		summarizeBy: none
+		sourceColumn: Dados.codigo_municipio
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.codigo_categoria'
+		dataType: string
+		lineageTag: 2a3a4da3-50fc-4bbe-8550-9cd0c974a227
+		summarizeBy: none
+		sourceColumn: Dados.codigo_categoria
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.sexo'
+		dataType: string
+		lineageTag: 5f440ae4-771a-4f98-abfd-96564338ef92
+		summarizeBy: none
+		sourceColumn: Dados.sexo
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.faixa_etaria'
+		dataType: string
+		lineageTag: 4a3b9738-2412-4fef-b4c5-e6ee5154819f
+		summarizeBy: none
+		sourceColumn: Dados.faixa_etaria
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.qtd_internacoes'
+		dataType: int64
+		formatString: 0
+		lineageTag: ed469051-7b1c-4e1a-b8a5-47203fc924b4
+		summarizeBy: sum
+		sourceColumn: Dados.qtd_internacoes
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.qtd_obitos'
+		dataType: int64
+		formatString: 0
+		lineageTag: 9487f6b6-2325-4654-84dc-2cfed82da50d
+		summarizeBy: sum
+		sourceColumn: Dados.qtd_obitos
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.dias_permanencia_total'
+		dataType: int64
+		formatString: 0
+		lineageTag: 15419af5-a6d5-46e5-8054-a37dbbd4ed73
+		summarizeBy: sum
+		sourceColumn: Dados.dias_permanencia_total
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.dias_uti_total'
+		dataType: int64
+		formatString: 0
+		lineageTag: fdaac20e-5113-427d-a19b-af14d77461fb
+		summarizeBy: sum
+		sourceColumn: Dados.dias_uti_total
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dados.valor_total_internacoes'
+		dataType: decimal
+		formatString: "R$"\ #,0.###############;-"R$"\ #,0.###############;"R$"\ #,0.###############
+		lineageTag: 78a1f576-013c-42ad-ab90-d8e9d3b0ff98
+		summarizeBy: sum
+		sourceColumn: Dados.valor_total_internacoes
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"pt-BR"}
+
+	column 'Dados.valor_total_uti'
+		dataType: decimal
+		formatString: "R$"\ #,0.###############;-"R$"\ #,0.###############;"R$"\ #,0.###############
+		lineageTag: 0b333e85-e1d6-4268-afdf-ab2888116a57
+		summarizeBy: sum
+		sourceColumn: Dados.valor_total_uti
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"pt-BR"}
+
+	partition fato_municipio_dia_cid = m
+		mode: import
+		source =
+				let
+				    Fonte = Folder.Files("C:\Users\Guilherme\Desktop\TCC\data\consumption\fato_municipio_dia_cid"),
+				    #"Linhas Filtradas" = Table.SelectRows(Fonte, each ([Extension] = ".parquet")),
+				    #"Personalização Adicionada" = Table.AddColumn(#"Linhas Filtradas", "Dados", each Parquet.Document([Content])),
+				    #"Dados Expandido" = Table.ExpandTableColumn(#"Personalização Adicionada", "Dados", {"municipio_dia_id", "data", "codigo_municipio", "codigo_categoria", "sexo", "faixa_etaria", "qtd_internacoes", "qtd_obitos", "dias_permanencia_total", "dias_uti_total", "valor_total_internacoes", "valor_total_uti"}, {"Dados.municipio_dia_id", "Dados.data", "Dados.codigo_municipio", "Dados.codigo_categoria", "Dados.sexo", "Dados.faixa_etaria", "Dados.qtd_internacoes", "Dados.qtd_obitos", "Dados.dias_permanencia_total", "Dados.dias_uti_total", "Dados.valor_total_internacoes", "Dados.valor_total_uti"}),
+				    #"Colunas Removidas" = Table.RemoveColumns(#"Dados Expandido",{"Content", "Name", "Extension", "Date accessed", "Date modified", "Date created", "Attributes", "Folder Path"}),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Colunas Removidas",{{"Dados.municipio_dia_id", type text}, {"Dados.data", type date}, {"Dados.codigo_municipio", type text}, {"Dados.codigo_categoria", type text}, {"Dados.sexo", type text}, {"Dados.faixa_etaria", type text}, {"Dados.qtd_internacoes", Int64.Type}, {"Dados.qtd_obitos", Int64.Type}, {"Dados.dias_permanencia_total", Int64.Type}, {"Dados.dias_uti_total", Int64.Type}, {"Dados.valor_total_internacoes", Currency.Type}, {"Dados.valor_total_uti", Currency.Type}})
+				in
+				    #"Tipo Alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,131 @@
+table dim_tempo
+	lineageTag: 73ca68df-fd9f-4010-a4e4-6e5e4963d49e
+	dataCategory: Time
+
+	column data
+		dataType: dateTime
+		isKey
+		formatString: Long Date
+		lineageTag: 22019e78-5f1b-4678-90a5-e309ac9396df
+		summarizeBy: none
+		sourceColumn: data
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column data_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 7d17c7d5-a3c5-4017-a232-e1af94a38088
+		summarizeBy: sum
+		sourceColumn: data_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column ano
+		dataType: int64
+		formatString: 0
+		lineageTag: db1bc35b-108d-4324-b63d-42218252174d
+		summarizeBy: sum
+		sourceColumn: ano
+
+		annotation SummarizationSetBy = Automatic
+
+	column mes
+		dataType: int64
+		formatString: 0
+		lineageTag: 122210d0-7644-47fc-bfa7-e178d756655f
+		summarizeBy: sum
+		sourceColumn: mes
+
+		annotation SummarizationSetBy = Automatic
+
+	column nome_mes
+		dataType: string
+		lineageTag: 1f8608f1-c279-441c-b62b-a6dfc8f6f38a
+		summarizeBy: none
+		sourceColumn: nome_mes
+		sortByColumn: mes
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column ano_mes
+		dataType: string
+		lineageTag: ec5b5d5e-233b-4795-bd27-30f8ba4b6961
+		summarizeBy: none
+		sourceColumn: ano_mes
+
+		annotation SummarizationSetBy = Automatic
+
+	column trimestre
+		dataType: int64
+		formatString: 0
+		lineageTag: a19501a3-cf4a-485c-a27e-8522544cd8a5
+		summarizeBy: sum
+		sourceColumn: trimestre
+
+		annotation SummarizationSetBy = Automatic
+
+	column dia_mes
+		dataType: int64
+		formatString: 0
+		lineageTag: f109709f-4e49-4c1e-9e30-812ba1661133
+		summarizeBy: sum
+		sourceColumn: dia_mes
+
+		annotation SummarizationSetBy = Automatic
+
+	column dia_semana_numero
+		dataType: int64
+		formatString: 0
+		lineageTag: c25f82e6-5f7e-4901-8de6-d27ef98e910e
+		summarizeBy: sum
+		sourceColumn: dia_semana_numero
+
+		annotation SummarizationSetBy = Automatic
+
+	column dia_semana_nome
+		dataType: string
+		lineageTag: 1c3a4916-25aa-444d-828a-1a8274f54c50
+		summarizeBy: none
+		sourceColumn: dia_semana_nome
+
+		annotation SummarizationSetBy = Automatic
+
+	column fim_de_semana
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: e9cb8d24-86f8-42ee-8bfe-041d6492a198
+		summarizeBy: none
+		sourceColumn: fim_de_semana
+
+		annotation SummarizationSetBy = Automatic
+
+	column mes_abreviado = LOWER(LEFT('dim_tempo'[nome_mes], 3))
+		dataType: string
+		lineageTag: d917fa86-dbb4-4352-a6fd-96cbea39a4e4
+		summarizeBy: none
+		sortByColumn: mes
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_tempo = m
+		mode: import
+		source =
+				let
+				    Fonte = Folder.Files("C:\Users\Guilherme\Desktop\TCC\data\consumption\dim_tempo"),
+				    #"Linhas Filtradas" = Table.SelectRows(Fonte, each ([Extension] = ".parquet")),
+				    #"Personalização Adicionada" = Table.AddColumn(#"Linhas Filtradas", "Dados", each Parquet.Document([Content])),
+				    #"Dados Expandido" = Table.ExpandTableColumn(#"Personalização Adicionada", "Dados", {"data", "data_id", "ano", "mes", "nome_mes", "ano_mes", "trimestre", "dia_mes", "dia_semana_numero", "dia_semana_nome", "fim_de_semana"}, {"data", "data_id", "ano", "mes", "nome_mes", "ano_mes", "trimestre", "dia_mes", "dia_semana_numero", "dia_semana_nome", "fim_de_semana"}),
+				    #"Colunas Removidas" = Table.RemoveColumns(#"Dados Expandido",{"Content", "Name", "Extension", "Date accessed", "Date modified", "Date created", "Attributes", "Folder Path"}),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Colunas Removidas",{{"data", type date}, {"data_id", Int64.Type}, {"ano", Int64.Type}, {"mes", Int64.Type}, {"nome_mes", type text}, {"ano_mes", type text}, {"trimestre", Int64.Type}, {"dia_mes", Int64.Type}, {"dia_semana_numero", Int64.Type}, {"dia_semana_nome", type text}, {"fim_de_semana", type logical}})
+				in
+				    #"Tipo Alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

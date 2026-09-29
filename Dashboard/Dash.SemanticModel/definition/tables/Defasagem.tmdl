@@ -1,0 +1,88 @@
+table Defasagem
+	lineageTag: d5d4fdf8-eb7a-44bf-9b41-2dc861f91a44
+
+	measure 'Defasagem Maior Variação' =
+			
+			VAR TabelaDefasagens =
+			    ADDCOLUMNS(
+			        VALUES(Defasagem[Defasagem]),
+			        "@Variacao", [Variação por Defasagem]
+			    )
+			
+			VAR Maior =
+			    TOPN(
+			        1,
+			        TabelaDefasagens,
+			        [@Variacao], DESC,
+			        Defasagem[Defasagem], ASC
+			    )
+			
+			RETURN
+			    CONCATENATEX(
+			        Maior,
+			        Defasagem[Defasagem],
+			        ""
+			    )
+		lineageTag: f421b211-e878-4228-be6f-eca95f16c308
+
+	measure 'Município-Dias Frio por Defasagem' =
+			
+			SWITCH(
+			    SELECTEDVALUE(Defasagem[Defasagem]),
+			    "Mesmo dia", [Município-Dias Frios],
+			    "Lag 1 dia", [Município-Dias Frio Lag 1],
+			    "Lag 3 dias", [Município-Dias Frio Lag 3],
+			    "Lag 7 dias", [Município-Dias Frio Lag 7],
+			    BLANK()
+			)
+		formatString: 0
+		lineageTag: 240fc38a-38a0-4416-9185-5acb3ed44d4a
+
+	measure 'Município-Dias Quente por Defasagem' =
+			
+			SWITCH(
+			    SELECTEDVALUE(Defasagem[Defasagem]),
+			    "Mesmo dia", [Município-Dias Quentes],
+			    "Lag 1 dia", [Município-Dias Quente Lag 1],
+			    "Lag 3 dias", [Município-Dias Quente Lag 3],
+			    "Lag 7 dias", [Município-Dias Quente Lag 7],
+			    BLANK()
+			)
+		formatString: 0
+		lineageTag: 5185bc2b-9a68-42e1-a7ad-d6eb5a8e351f
+
+	column Defasagem
+		lineageTag: c2415dfc-0c46-4bb3-b2c6-050eb2226521
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Defasagem]
+		sortByColumn: Ordem
+
+		annotation SummarizationSetBy = Automatic
+
+	column Ordem
+		formatString: 0
+		lineageTag: eb04f6e4-74e5-4de4-8904-4ac0f28eb166
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Ordem]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Defasagem = calculated
+		mode: import
+		source =
+				
+				DATATABLE(
+				    "Defasagem", STRING,
+				    "Ordem", INTEGER,
+				    {
+				        {"Mesmo dia", 0},
+				        {"Lag 1 dia", 1},
+				        {"Lag 3 dias", 3},
+				        {"Lag 7 dias", 7}
+				    }
+				)
+
+	annotation PBI_Id = 1afecfc8dd8747fbba40668db52f689e
+

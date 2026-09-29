@@ -57,6 +57,15 @@ SPARK_CONF_FATO_INTERNACAO_METEOROLOGIA = {
     "spark.sql.shuffle.partitions": "40",
 }
 
+SPARK_CONF_CONSUMPTION = {
+    **SPARK_CONF,
+    "spark.sql.shuffle.partitions": "40",
+    # As duas fatos reconciliam mais de 8 milhões de linhas; 1 GiB esgotou o
+    # heap durante a materialização real. Esta configuração é exclusiva das
+    # novas tasks e não altera a conexão spark_default.
+    "spark.driver.memory": "4g",
+}
+
 
 # ============================================================
 # CAMINHOS DOS SCRIPTS - INMET
@@ -135,6 +144,16 @@ GOLD_FATO_INTERNACAO_METEOROLOGIA_SCRIPT = (
 )
 DQ_GOLD_FATO_INTERNACAO_METEOROLOGIA_SCRIPT = (
     f"{BASE_PATH}/src/quality/gold/dq_fato_internacao_meteorologia.py"
+)
+
+
+# ============================================================
+# CAMINHOS DOS SCRIPTS - CONSUMPTION
+# ============================================================
+
+CONSUMPTION_SCRIPT = f"{BASE_PATH}/src/consumption/build.py"
+DQ_CONSUMPTION_SCRIPT = (
+    f"{BASE_PATH}/src/quality/consumption/dq_consumption.py"
 )
 
 
@@ -437,6 +456,38 @@ with DAG(
         gold_fato_internacao >> dq_gold_fato_internacao
         gold_fato_internacao_meteorologia >> dq_gold_fato_internacao_meteorologia
 
+    # ========================================================
+    # TASK GROUP - CONSUMPTION
+    # ========================================================
+
+    with TaskGroup(
+        group_id="consumption",
+        tooltip="Camada de consumo para Power BI e seu gate de Data Quality",
+    ) as consumption:
+
+        build_consumption = SparkSubmitOperator(
+            task_id="build_consumption",
+            application=CONSUMPTION_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-consumption-powerbi",
+            conf=SPARK_CONF_CONSUMPTION,
+            retries=1,
+            retry_delay=timedelta(minutes=1),
+            durable=False,
+        )
+
+        dq_consumption = SparkSubmitOperator(
+            task_id="dq_consumption",
+            application=DQ_CONSUMPTION_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-dq-consumption-powerbi",
+            conf=SPARK_CONF_CONSUMPTION,
+            retries=0,
+            durable=False,
+        )
+
+        build_consumption >> dq_consumption
+
     # Cada transformação aguarda aprovação de todas as fontes consumidas.
     [dq_silver_ibge, dq_silver_inmet] >> gold_municipio_estacao
     [
@@ -449,6 +500,12 @@ with DAG(
         dq_gold_fato_internacao,
         dq_silver_inmet_diario,
     ] >> gold_fato_internacao_meteorologia
+    [
+        dq_gold_fato_internacao_meteorologia,
+        dq_silver_sih,
+        dq_silver_inmet,
+        dq_silver_inmet_diario,
+    ] >> build_consumption
 
     # Gates Bronze, incluindo o cadastro IBGE consumido diretamente pelo SIH.
     bronze_inmet >> dq_bronze_inmet >> silver_inmet

@@ -1,0 +1,27 @@
+Dashboard TCC — Saúde e clima
+
+Abra Dash_TCC.pbip no Power BI Desktop. Mantenha Dash.Report e
+Dash.SemanticModel na mesma pasta do arquivo .pbip.
+
+As seis páginas receberam cabeçalhos comuns, filtros alinhados,
+cards padronizados, margens consistentes e uma paleta com azul,
+verde-petróleo, laranja e cores auxiliares. Azul representa frio;
+laranja representa calor nos gráficos que comparam essas condições.
+
+Tema_TCC.json é um tema reutilizável opcional. A formatação já foi
+aplicada diretamente aos visuais do projeto, portanto não é
+necessário importá-lo. A referência ao tema-base foi preservada
+para manter a compatibilidade com o Power BI Desktop instalado.
+
+As medidas DAX, relações, consultas Power Query e filtros analíticos
+foram preservados. As fontes continuam apontando para os arquivos
+Parquet da pasta original C:\Users\Guilherme\Desktop\TCC\data\consumption.
+
+O projeto original em Documents\Codex foi preservado.
+
+Revisão da página 2: o gráfico temporal ocupa a largura completa.
+O eixo mostra os meses abreviados (jan, fev, mar...) agrupados por ano, em duas linhas.
+O período de 2023 a 2025 aparece completo, sem rolagem horizontal.
+O gráfico por faixa de temperatura e a comparação municipal ficam abaixo.
+A agregação continua mensal; as medidas foram preservadas. Foi adicionada apenas uma coluna de apresentação
+com os nomes abreviados dos meses, ordenada pelo número do mês.
