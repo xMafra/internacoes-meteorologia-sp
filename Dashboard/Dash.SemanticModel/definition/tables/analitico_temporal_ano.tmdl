@@ -1,0 +1,142 @@
+table analitico_temporal_ano
+	lineageTag: 93e9b906-9560-4d45-a9e3-d287161509d3
+
+	measure 'Mediana Contraste Anual' = MAX(analitico_temporal_ano[mediana_diferenca_relativa])
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 04 - Temporal
+		lineageTag: 511ecaef-ba90-4e1a-80e9-a700239c7f0b
+
+	measure 'Q1 Contraste Anual' = MAX(analitico_temporal_ano[q1])
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 04 - Temporal
+		lineageTag: 6d544648-6ef7-4148-b9ec-5055dde9b819
+
+	measure 'Q3 Contraste Anual' = MAX(analitico_temporal_ano[q3])
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 04 - Temporal
+		lineageTag: 3a94b584-f78b-431c-ba79-1097b199f682
+
+	measure '% Positivos Anual' = DIVIDE(MAX(analitico_temporal_ano[percentual_positivo]), 100)
+		formatString: 0.00%
+		displayFolder: 04 - Temporal
+		lineageTag: f751159a-6b6d-4499-9154-ed77e458b785
+
+	measure '% Negativos Anual' = DIVIDE(MAX(analitico_temporal_ano[percentual_negativo]), 100)
+		formatString: 0.00%
+		displayFolder: 04 - Temporal
+		lineageTag: 036a96e9-5d76-48c4-a676-b6d008312388
+
+	measure 'Municípios Válidos Anual' = MAX(analitico_temporal_ano[municipios_validos])
+		formatString: 0
+		displayFolder: 04 - Temporal
+		lineageTag: 9b2f9591-c26b-419d-9dad-ceb182e35288
+
+	measure 'Maior Contraste Observado Ano' = MAXX(TOPN(1, ALL(analitico_temporal_ano), analitico_temporal_ano[mediana_diferenca_relativa], DESC), analitico_temporal_ano[ano])
+		formatString: 0
+		displayFolder: 04 - Temporal
+		lineageTag: 8954c109-9e4f-4099-b410-78543951ba0b
+
+	measure 'Menor Contraste Observado Ano' = MAXX(TOPN(1, ALL(analitico_temporal_ano), analitico_temporal_ano[mediana_diferenca_relativa], ASC), analitico_temporal_ano[ano])
+		formatString: 0
+		displayFolder: 04 - Temporal
+		lineageTag: 49e32008-2864-41a7-9869-6b25af9b5b04
+
+	measure 'Linha Zero Temporal' = 0
+		formatString: 0.00%
+		displayFolder: 09 - Auxiliares
+		lineageTag: 7a507d49-03ba-4e82-bd72-521c072adb84
+
+	column ano
+		dataType: int64
+		formatString: 0
+		lineageTag: 8b4ec5d8-d64f-4571-ae6b-216bb9ea5679
+		summarizeBy: none
+		sourceColumn: ano
+
+	column municipios_total
+		dataType: int64
+		formatString: 0
+		lineageTag: 86ffe264-6e13-4fbd-9eb2-bc5e1fc51252
+		summarizeBy: sum
+		sourceColumn: municipios_total
+
+	column municipios_elegiveis
+		dataType: int64
+		formatString: 0
+		lineageTag: afec20c8-46c4-46dd-8aba-6459f529210b
+		summarizeBy: sum
+		sourceColumn: municipios_elegiveis
+
+	column municipios_validos
+		dataType: int64
+		formatString: 0
+		lineageTag: 46b940b3-1416-40f9-a148-264097cadfab
+		summarizeBy: sum
+		sourceColumn: municipios_validos
+
+	column media_diferenca_relativa
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 36eb6c46-1483-4e5a-a7a1-a00f1ec93353
+		summarizeBy: average
+		sourceColumn: media_diferenca_relativa
+
+	column minimo
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 869751cc-104a-4ec2-a966-dcc480e3e96e
+		summarizeBy: average
+		sourceColumn: minimo
+
+	column maximo
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: d938d8e5-589f-4163-a7d3-44ccbbb99786
+		summarizeBy: average
+		sourceColumn: maximo
+
+	column q1
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: d4414fbc-fbef-4850-a3b6-445a56b645b4
+		summarizeBy: average
+		sourceColumn: q1
+
+	column mediana_diferenca_relativa
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: d9120476-7784-4087-bd47-e7c57955a393
+		summarizeBy: average
+		sourceColumn: mediana_diferenca_relativa
+
+	column q3
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 4eec812e-70ef-455a-8500-165355180494
+		summarizeBy: average
+		sourceColumn: q3
+
+	column percentual_positivo
+		dataType: double
+		lineageTag: 753033cc-5254-4e99-b09b-891900c5473e
+		summarizeBy: average
+		sourceColumn: percentual_positivo
+
+	column percentual_negativo
+		dataType: double
+		lineageTag: 840f7158-8228-474c-ad7e-a4fcbcfeff8b
+		summarizeBy: average
+		sourceColumn: percentual_negativo
+
+	partition analitico_temporal_ano = m
+		mode: import
+		source =
+				let
+				    Fonte = Folder.Files("C:\Users\Guilherme\Desktop\TCC\data\consumption\dashboard_analytics\temporal_ano"),
+				    Arquivos = Table.SelectRows(Fonte, each [Extension] = ".parquet"),
+				    Dados = Table.AddColumn(Arquivos, "Tabela", each Parquet.Document([Content])),
+				    Expandido = Table.ExpandTableColumn(Dados, "Tabela", {"ano","municipios_total","municipios_elegiveis","municipios_validos","media_diferenca_relativa","minimo","maximo","q1","mediana_diferenca_relativa","q3","percentual_positivo","percentual_negativo"}),
+				    Selecionado = Table.SelectColumns(Expandido,{"ano","municipios_total","municipios_elegiveis","municipios_validos","media_diferenca_relativa","minimo","maximo","q1","mediana_diferenca_relativa","q3","percentual_positivo","percentual_negativo"}),
+				    Tipos = Table.TransformColumnTypes(Selecionado,{{"ano", Int64.Type},{"municipios_total", Int64.Type},{"municipios_elegiveis", Int64.Type},{"municipios_validos", Int64.Type},{"media_diferenca_relativa", type number},{"minimo", type number},{"maximo", type number},{"q1", type number},{"mediana_diferenca_relativa", type number},{"q3", type number},{"percentual_positivo", type number},{"percentual_negativo", type number}})
+				in Tipos
+

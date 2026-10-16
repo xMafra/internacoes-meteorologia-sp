@@ -23,17 +23,16 @@
 # Regra crítica:
 #   A quantidade de internações NÃO pode mudar.
 #
-# Esperado:
-#   8.409.047 registros antes do JOIN
-#   8.409.047 registros depois do JOIN
-#
-# Observação:
-#   A Silver INMET Diário possui 1 linha por codigo_estacao + data
-#   e 43.840 registros no período 2023–2025.
+# A expectativa é relacional: o volume antes e depois do JOIN deve ser
+# idêntico. Não há cardinalidade absoluta fixa para onze anos.
 #
 # ==============================================================
 
 from time import perf_counter
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from pyspark import StorageLevel
 from pyspark.sql import SparkSession
@@ -55,6 +54,15 @@ from pyspark.sql.functions import (
     lit,
 )
 
+from src.common.spark_io import destino_parquet_atomico
+
+from src.common.study_period import (
+    DATA_FIM,
+    DATA_INICIO,
+    DATA_INMET_FIM,
+    DATA_INMET_INICIO,
+)
+
 
 # ==============================================================
 # CONFIGURAÇÕES
@@ -73,10 +81,6 @@ SILVER_INMET_DIARIO = (
 GOLD_FATO_INTERNACAO_METEOROLOGIA = (
     f"{BASE_PATH}/gold/fato_internacao_meteorologia"
 )
-
-
-DATA_INICIO = "2023-01-01"
-DATA_FIM = "2025-12-31"
 
 
 # ==============================================================
@@ -278,7 +282,7 @@ print(
 #
 # Os arquivos hospitalares processados pertencem ao recorte do
 # projeto, mas data_internacao pode eventualmente estar fora do
-# intervalo meteorológico 2023-01-01 a 2025-12-31.
+# intervalo meteorológico configurado.
 #
 # Essas internações NÃO serão removidas.
 #
@@ -671,18 +675,18 @@ if (
         datas_inmet["data_min"]
     )
     !=
-    DATA_INICIO
+    DATA_INMET_INICIO
     or
     str(
         datas_inmet["data_max"]
     )
     !=
-    DATA_FIM
+    DATA_INMET_FIM
 ):
 
     raise ValueError(
-        "Período da Silver INMET Diário "
-        "diferente de 2023–2025."
+        "Período da Silver INMET Diário diferente da janela técnica "
+        f"{DATA_INMET_INICIO} a {DATA_INMET_FIM}."
     )
 
 
@@ -875,9 +879,8 @@ print(
 )
 
 
-# A Silver INMET Diário possui apenas 43.840 registros.
-# Broadcast evita shuffle desnecessário da fato com 8,4 milhões
-# de internações.
+# A Silver INMET Diário é substancialmente menor que a fato de internações;
+# broadcast evita shuffle desnecessário.
 
 inicio_join_meteorologico = perf_counter()
 
@@ -1255,16 +1258,15 @@ if total_integrado != total_fato:
 
 
 # --------------------------------------------------------------
-# Regra crítica 2:
-# não pode existir falha de correspondência dentro do intervalo
-# em que sabemos que as 40 estações possuem todos os 1.096 dias.
+# Regra de cobertura: falhas de estação-dia são preservadas como NULL e
+# reportadas. A rede histórica não é completa em todos os anos.
 # --------------------------------------------------------------
 
 if sem_match_dentro > 0:
 
     print(
-        "\nERRO: existem internações dentro de "
-        "2023–2025 sem correspondência meteorológica."
+        "\nAVISO: existem internações no período analítico sem "
+        "correspondência estação-dia."
     )
 
     (
@@ -1308,46 +1310,21 @@ if sem_match_dentro > 0:
         )
     )
 
-    raise ValueError(
-        "Existem internações dentro do período "
-        "INMET sem correspondência estação + dia."
-    )
-
-
-# --------------------------------------------------------------
-# Regra crítica 3:
-# depois das validações de código e completude do INMET, todos os
-# sem-match esperados devem ser explicados exclusivamente por
-# datas fora da cobertura temporal do INMET.
-# --------------------------------------------------------------
-
-if sem_match != fato_fora_periodo:
-
-    raise ValueError(
-        "A quantidade de internações sem INMET "
-        "não coincide com a quantidade de internações "
-        "fora do período meteorológico. "
-        f"Sem match: {sem_match}. "
-        f"Fora do período: {fato_fora_periodo}."
-    )
-
-
 print(
     "✓ JOIN preservou todas as internações."
 )
 
 print(
-    "✓ Não existem falhas de correspondência "
-    "dentro do período 2023–2025."
+    f"Cobertura no período analítico {DATA_INICIO} a {DATA_FIM}: "
+    f"sem match={sem_match_dentro}."
 )
 
 
 if sem_match > 0:
 
     print(
-        "⚠ Existem internações sem meteorologia "
-        "porque data_internacao está fora da "
-        "cobertura temporal 2023–2025 do INMET."
+        "⚠ Existem internações sem meteorologia por lacuna histórica "
+        "da estação selecionada ou data fora da janela técnica."
     )
 
     print(
@@ -1685,29 +1662,32 @@ print(
 # Isso preserva a base já validada e permite comparar os dois
 # datasets durante esta etapa de construção.
 
-(
-    df_integrada
+with destino_parquet_atomico(
+    GOLD_FATO_INTERNACAO_METEOROLOGIA
+) as caminho_staging:
+    (
+        df_integrada
 
-    .repartition(
-        "ano",
-        "mes",
+        .repartition(
+            "ano",
+            "mes",
+        )
+
+        .write
+
+        .mode(
+            "overwrite"
+        )
+
+        .partitionBy(
+            "ano",
+            "mes",
+        )
+
+        .parquet(
+            caminho_staging
+        )
     )
-
-    .write
-
-    .mode(
-        "overwrite"
-    )
-
-    .partitionBy(
-        "ano",
-        "mes",
-    )
-
-    .parquet(
-        GOLD_FATO_INTERNACAO_METEOROLOGIA
-    )
-)
 
 
 # A escrita é a última action que consome a linhagem do INMET.

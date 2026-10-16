@@ -1,8 +1,13 @@
 import os
 import re
+import sys
 import zipfile
 import tempfile
 import shutil
+import unicodedata
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
@@ -13,6 +18,7 @@ from pyspark.sql.functions import (
     substring,
     trim,
     to_timestamp,
+    when,
 )
 from pyspark.sql.types import (
     DoubleType,
@@ -20,6 +26,8 @@ from pyspark.sql.types import (
     StructField,
     StructType,
 )
+
+from src.common.study_period import DATA_INMET_FIM, DATA_INMET_INICIO, INMET_YEARS
 
 
 # ============================================================
@@ -29,10 +37,45 @@ from pyspark.sql.types import (
 BRONZE_BASE = "/home/jovyan/work/data/bronze/inmet"
 SILVER_BASE = "/home/jovyan/work/data/silver/inmet"
 
-# TESTE INICIAL:
-# Processaremos somente 2023.
-# Depois da validação, alteraremos para [2023, 2024, 2025].
-ANOS = [2023, 2024, 2025]
+ANOS = list(INMET_YEARS)
+if os.getenv("TCC_INMET_PROCESS_YEARS"):
+    solicitados = [
+        int(valor.strip())
+        for valor in os.environ["TCC_INMET_PROCESS_YEARS"].split(",")
+        if valor.strip()
+    ]
+    fora_da_janela = sorted(set(solicitados) - set(INMET_YEARS))
+    if fora_da_janela:
+        raise ValueError(f"Anos INMET fora da janela técnica: {fora_da_janela}")
+    ANOS = solicitados
+
+
+def silver_anual_valida(spark, caminho: str) -> bool:
+    """Confirma conclusão, legibilidade e esquema mínimo antes do reuso."""
+
+    if os.getenv("TCC_FORCE_REPROCESS", "0") == "1":
+        return False
+
+    sucesso = os.path.join(caminho, "_SUCCESS")
+    if not os.path.isfile(sucesso):
+        return False
+
+    encontrou_parquet = any(
+        nome.endswith(".parquet")
+        for _, _, arquivos in os.walk(caminho)
+        for nome in arquivos
+    )
+    if not encontrou_parquet:
+        return False
+
+    try:
+        colunas = set(spark.read.parquet(caminho).columns)
+    except Exception as erro:
+        print(f"Silver existente ilegível em {caminho}: {erro}")
+        return False
+
+    essenciais = {"data", "codigo_estacao", "temperatura_c"}
+    return essenciais.issubset(colunas)
 
 
 # ============================================================
@@ -59,7 +102,7 @@ def converter_decimal(nome_coluna):
     Valores vazios são convertidos para NULL.
     """
 
-    return (
+    convertido = (
         regexp_replace(
             trim(col(nome_coluna)),
             ",",
@@ -67,6 +110,9 @@ def converter_decimal(nome_coluna):
         )
         .cast(DoubleType())
     )
+    # Séries históricas antigas usam -9999 como sentinela de ausência.
+    sentinela = (convertido <= -9990) | (convertido >= 9990)
+    return when(sentinela, lit(None).cast(DoubleType())).otherwise(convertido)
 
 
 # ============================================================
@@ -121,16 +167,15 @@ def extrair_metadados(caminho_csv):
 
     metadados = {}
 
-    with open(
-        caminho_csv,
-        "r",
-        encoding="latin-1",
-        errors="replace"
-    ) as arquivo:
+    with open(caminho_csv, "rb") as arquivo:
 
         for _ in range(8):
 
-            linha = arquivo.readline().strip()
+            linha_bytes = arquivo.readline()
+            try:
+                linha = linha_bytes.decode("utf-8").strip()
+            except UnicodeDecodeError:
+                linha = linha_bytes.decode("latin-1").strip()
 
             if not linha:
                 continue
@@ -140,7 +185,15 @@ def extrair_metadados(caminho_csv):
             if len(partes) != 2:
                 continue
 
-            chave = partes[0].strip()
+            chave = unicodedata.normalize("NFKD", partes[0].strip())
+            chave = "".join(c for c in chave if not unicodedata.combining(c)).upper()
+            # O acervo de 2019 foi publicado com '?' no lugar de alguns
+            # caracteres acentuados (REGI?O/ESTAC?O), independentemente do
+            # codec. Canonicaliza somente essas chaves conhecidas.
+            if chave.startswith("REGI"):
+                chave = "REGIAO:"
+            elif chave.startswith("ESTA"):
+                chave = "ESTACAO:"
             valor = partes[1].strip()
 
             metadados[chave] = valor
@@ -323,13 +376,15 @@ def processar_csv(
 
     df = (
         spark.read
-        .option("header", "true")
+        # O cabeçalho tabular é precedido por oito linhas de metadados. Com
+        # schema explícito, todas podem ser lidas e descartadas pelo filtro.
+        .option("header", "false")
         .option("delimiter", ";")
         .option("encoding", "ISO-8859-1")
         .option("mode", "PERMISSIVE")
         .option("nullValue", "")
         .schema(schema)
-        .csv(caminho_csv)
+        .csv(str(caminho_csv))
     )
 
     # --------------------------------------------------------
@@ -338,8 +393,11 @@ def processar_csv(
 
     df = df.filter(
         col("data").rlike(
-            r"^\d{4}/\d{2}/\d{2}$"
+            r"^\d{4}[/-]\d{2}[/-]\d{2}$"
         )
+    ).withColumn(
+        "data",
+        regexp_replace(trim(col("data")), "-", "/")
     )
 
     # --------------------------------------------------------
@@ -373,6 +431,17 @@ def processar_csv(
             converter_decimal(nome_coluna)
         )
 
+    # O mesmo intervalo físico usado pelo DQ torna-se regra de limpeza da
+    # variável analítica central. Valores impossíveis permanecem rastreáveis
+    # na Bronze e viram NULL na Silver, nunca zero nem valor imputado.
+    df = df.withColumn(
+        "temperatura_c",
+        when(
+            col("temperatura_c").between(-30, 60),
+            col("temperatura_c"),
+        ).otherwise(lit(None).cast(DoubleType())),
+    )
+
     # --------------------------------------------------------
     # Normalizar hora
     # --------------------------------------------------------
@@ -380,7 +449,7 @@ def processar_csv(
     df = df.withColumn(
         "hora_utc",
         substring(
-            trim(col("hora_utc")),
+            regexp_replace(trim(col("hora_utc")), "[^0-9]", ""),
             1,
             4
         )
@@ -414,19 +483,19 @@ def processar_csv(
         )
         .withColumn(
             "codigo_estacao",
-            lit(codigo_estacao)
+            lit(codigo_estacao).cast(StringType())
         )
         .withColumn(
             "estacao",
-            lit(estacao)
+            lit(estacao).cast(StringType())
         )
         .withColumn(
             "uf",
-            lit(uf)
+            lit(uf).cast(StringType())
         )
         .withColumn(
             "regiao",
-            lit(regiao)
+            lit(regiao).cast(StringType())
         )
         .withColumn(
             "latitude",
@@ -489,9 +558,21 @@ def processar_ano(
     ano
 ):
     """
-    Processa todas as 40 estações de SP
-    de determinado ano.
+    Processa todas as estações de SP disponíveis em determinado ano.
     """
+
+    caminho_silver = os.path.join(
+        SILVER_BASE,
+        str(ano)
+    )
+
+    if silver_anual_valida(spark, caminho_silver):
+        total_existente = spark.read.parquet(caminho_silver).count()
+        print(
+            f"Silver INMET {ano} já concluída e validada; "
+            f"reutilizando {total_existente} registros."
+        )
+        return total_existente
 
     caminho_zip = os.path.join(
         BRONZE_BASE,
@@ -553,6 +634,8 @@ def processar_ano(
 
         dfs = []
 
+        total_arquivos = len(caminhos_csv)
+
         for indice, caminho_csv in enumerate(
             caminhos_csv,
             start=1
@@ -563,7 +646,7 @@ def processar_ano(
             )
 
             print(
-                f"[{indice:02d}/40] "
+                f"[{indice:02d}/{total_arquivos:02d}] "
                 f"{nome_arquivo}"
             )
 
@@ -586,9 +669,24 @@ def processar_ano(
                 outro_df
             )
 
+        # O ZIP anual de 2014 é a menor unidade publicada. Na Silver ficam
+        # apenas os sete dias técnicos exigidos pelos lags e o período
+        # analítico, sem ampliar o universo final do estudo.
+        df = df.filter(
+            col("data_hora_utc").between(
+                f"{DATA_INMET_INICIO} 00:00:00",
+                f"{DATA_INMET_FIM} 23:00:00",
+            )
+        )
+
         df.cache()
 
         total = df.count()
+
+        if total == 0:
+            raise ValueError(
+                f"Nenhuma observação meteorológica válida encontrada em {ano}."
+            )
 
         # ----------------------------------------------------
         # Resumo
@@ -604,11 +702,6 @@ def processar_ano(
         # ----------------------------------------------------
         # Escrever Silver
         # ----------------------------------------------------
-
-        caminho_silver = os.path.join(
-            SILVER_BASE,
-            str(ano)
-        )
 
         os.makedirs(
             caminho_silver,

@@ -11,9 +11,12 @@ from functools import reduce
 from pyspark.sql import DataFrame, SparkSession, Window
 from pyspark.sql import functions as F
 
+from src.common.study_period import (
+    ANALYSIS_END_DATE,
+    DATA_FIM,
+    DATA_INICIO,
+)
 
-DATA_INICIO = "2023-01-01"
-DATA_FIM = "2025-12-31"
 FAIXAS_ETARIAS = ["0-17", "18-39", "40-59", "60-79", "80+", "Ignorada"]
 METRICAS_SAUDE = [
     "qtd_internacoes",
@@ -59,6 +62,12 @@ METEOROLOGIA_ADICIONAL = [
     "qtd_obs_rajada",
 ]
 
+AUDITORIA_PAINEL = [
+    "dia_sem_internacao",
+    "cobertura_temperatura_estacao_ano_pct",
+    "criterio_selecao_estacao",
+]
+
 
 def municipio_dia_id(data="data", municipio="codigo_municipio"):
     """Cria a chave estável AAAAMMDD_codigoIBGE."""
@@ -70,7 +79,7 @@ def faixa_etaria(cod_idade="COD_IDADE", idade="IDADE"):
     codigo = F.trim(F.col(cod_idade).cast("string"))
     valor = F.col(idade).cast("int")
     idade_anos = (
-        F.when(codigo.isin("2", "3"), F.lit(0))
+        F.when(codigo.isin("1", "2", "3"), F.lit(0))
         .when(codigo == "4", valor)
         .when(codigo == "5", valor + F.lit(100))
     )
@@ -178,30 +187,184 @@ def adicionar_lags_exatos(
     df_inmet_diario: DataFrame,
     dias=(1, 3, 7),
 ) -> DataFrame:
-    """Anexa temperatura da data civil exata, sem usar posição de linha."""
+    """Anexa temperatura atribuída ao município na data civil exata.
+
+    Dentro do período analítico, o lookup usa a própria série município-dia.
+    Assim, quando a estação muda entre anos, o lag de janeiro consulta a
+    estação que estava atribuída ao município em dezembro. Para os sete dias
+    técnicos anteriores ao início da análise, quando ainda não existe painel,
+    usa-se a estação atribuída no primeiro ano analítico.
+    """
+    obrigatorias = {"codigo_municipio", "data", "temperatura_media_dia_c"}
+    ausentes = obrigatorias - set(df_fato.columns)
+    if ausentes:
+        raise ValueError(
+            "adicionar_lags_exatos requer painel município-dia com: "
+            + ", ".join(sorted(ausentes))
+        )
+
+    lookup_municipio = df_fato.select(
+        F.col("codigo_municipio").alias("_municipio_lag"),
+        F.to_date("data").alias("_data_municipio_lag"),
+        F.col("temperatura_media_dia_c").alias("_temperatura_municipio_lag"),
+    )
     resultado = df_fato.alias("f")
     for dia in dias:
         nome = f"temperatura_media_lag_{dia}d"
-        lookup = df_inmet_diario.select(
-            F.col("codigo_estacao").alias(f"estacao_lag_{dia}"),
-            F.to_date("data").alias(f"data_lag_{dia}"),
-            F.col("temperatura_media_dia_c").alias(nome),
+        data_alvo = F.date_sub(F.col("data"), dia)
+        lookup_tecnico = df_inmet_diario.select(
+            F.col("codigo_estacao").alias(f"_estacao_tecnica_{dia}"),
+            F.to_date("data").alias(f"_data_tecnica_{dia}"),
+            F.col("temperatura_media_dia_c").alias(f"_temperatura_tecnica_{dia}"),
         )
-        resultado = resultado.join(
-            lookup,
-            (F.col("codigo_estacao") == F.col(f"estacao_lag_{dia}"))
-            & (F.col(f"data_lag_{dia}") == F.date_sub(F.col("data"), dia)),
-            "left",
-        ).drop(f"estacao_lag_{dia}", f"data_lag_{dia}")
+        resultado = (
+            resultado.join(
+                lookup_municipio,
+                (F.col("codigo_municipio") == F.col("_municipio_lag"))
+                & (F.col("_data_municipio_lag") == data_alvo),
+                "left",
+            )
+            .join(
+                lookup_tecnico,
+                (F.col("codigo_estacao") == F.col(f"_estacao_tecnica_{dia}"))
+                & (F.col(f"_data_tecnica_{dia}") == data_alvo),
+                "left",
+            )
+            .withColumn(
+                nome,
+                F.when(
+                    data_alvo < F.lit(DATA_INICIO).cast("date"),
+                    F.col(f"_temperatura_tecnica_{dia}"),
+                ).otherwise(F.col("_temperatura_municipio_lag")),
+            )
+            .drop(
+                "_municipio_lag", "_data_municipio_lag",
+                "_temperatura_municipio_lag", f"_estacao_tecnica_{dia}",
+                f"_data_tecnica_{dia}", f"_temperatura_tecnica_{dia}",
+            )
+        )
     return resultado
+
+
+def rotulo_sexo(coluna="sexo"):
+    """Traduz o código SIH sem remover o valor original."""
+    codigo = F.trim(F.col(coluna).cast("string"))
+    return (
+        F.when(codigo == "1", F.lit("Masculino"))
+        .when(codigo == "3", F.lit("Feminino"))
+        .when(codigo == "0", F.lit("Ignorado"))
+        .otherwise(F.lit("Não mapeado"))
+    )
+
+
+def criar_painel_municipio_dia(
+    spark: SparkSession,
+    df_ibge: DataFrame,
+    df_municipio_estacao: DataFrame,
+) -> DataFrame:
+    """Cria as 645 combinações municipais para cada data analítica.
+
+    A ausência de AIH em um município-dia, após a ingestão completa das
+    competências, representa zero internações. Meteorologia é anexada depois
+    e nunca recebe preenchimento artificial.
+    """
+    municipios = df_ibge.select(
+        F.col("CD_MUN").alias("codigo_municipio")
+    ).dropDuplicates()
+    calendario = criar_dim_tempo(spark).select("data", "ano")
+    mapa = df_municipio_estacao.select(
+        F.col("CD_MUN").alias("codigo_municipio"),
+        F.col("ano").cast("int").alias("ano"),
+        "codigo_estacao",
+        F.col("cobertura_temperatura_pct")
+        .alias("cobertura_temperatura_estacao_ano_pct"),
+        F.col("criterio_selecao").alias("criterio_selecao_estacao"),
+    )
+    return municipios.crossJoin(calendario).join(
+        mapa, ["codigo_municipio", "ano"], "left"
+    )
+
+
+def preparar_meteorologia_diaria(df_inmet_diario: DataFrame) -> DataFrame:
+    """Normaliza a Silver diária para o contrato da fato de consumo."""
+    return df_inmet_diario.select(
+        "codigo_estacao",
+        F.to_date("data").alias("data"),
+        "temperatura_media_dia_c",
+        "temperatura_minima_dia_c",
+        "temperatura_maxima_dia_c",
+        "umidade_media_dia_pct",
+        "umidade_minima_dia_pct",
+        "umidade_maxima_dia_pct",
+        "precipitacao_dia_mm",
+        "vento_medio_dia_ms",
+        "vento_maximo_dia_ms",
+        F.col("qtd_observacoes").cast("long").alias("qtd_observacoes_inmet"),
+        F.col("qtd_obs_temperatura").cast("long"),
+        F.col("qtd_obs_umidade").cast("long"),
+        F.col("qtd_obs_precipitacao").cast("long"),
+        F.col("qtd_obs_vento").cast("long"),
+    )
 
 
 def criar_fato_municipio_dia(
     df_gold: DataFrame,
     df_inmet_horario: DataFrame,
     df_inmet_diario: DataFrame,
+    df_ibge: DataFrame | None = None,
+    df_municipio_estacao: DataFrame | None = None,
+    spark: SparkSession | None = None,
 ) -> DataFrame:
-    base = criar_fato_municipio_dia_base(df_gold)
+    if df_ibge is None or df_municipio_estacao is None:
+        base = criar_fato_municipio_dia_base(df_gold)
+    else:
+        spark = spark or df_gold.sparkSession
+        painel = criar_painel_municipio_dia(spark, df_ibge, df_municipio_estacao)
+        saude = (
+            filtrar_periodo(df_gold, "data_internacao")
+            .groupBy(
+                F.to_date("data_internacao").alias("data"),
+                F.col("CD_MUN").alias("codigo_municipio"),
+            )
+            .agg(*expressoes_saude())
+        )
+        zeros = {
+            "qtd_internacoes": F.lit(0).cast("long"),
+            "qtd_obitos": F.lit(0).cast("long"),
+            "dias_permanencia_total": F.lit(0).cast("long"),
+            "dias_uti_total": F.lit(0).cast("long"),
+            "valor_total_internacoes": F.lit(0).cast("decimal(20,2)"),
+            "valor_total_uti": F.lit(0).cast("decimal(20,2)"),
+        }
+        base = painel.join(saude, ["data", "codigo_municipio"], "left")
+        base = base.withColumn(
+            "dia_sem_internacao", F.col("qtd_internacoes").isNull().cast("int")
+        )
+        for nome, zero in zeros.items():
+            base = base.withColumn(nome, F.coalesce(F.col(nome), zero))
+
+        meteo = preparar_meteorologia_diaria(df_inmet_diario).withColumn(
+            "_registro_meteorologico", F.lit(1)
+        )
+        base = (
+            base.join(meteo, ["codigo_estacao", "data"], "left")
+            .withColumn(
+                "meteorologia_disponivel",
+                F.coalesce(F.col("_registro_meteorologico"), F.lit(0)).cast("int"),
+            )
+            .withColumn(
+                "motivo_sem_meteorologia",
+                F.when(
+                    F.col("_registro_meteorologico").isNull(),
+                    F.lit("SEM_REGISTRO_ESTACAO_DIA"),
+                ).when(
+                    F.col("temperatura_media_dia_c").isNull(),
+                    F.lit("TEMPERATURA_AUSENTE"),
+                ).otherwise(F.lit(None).cast("string")),
+            )
+            .drop("_registro_meteorologico")
+            .withColumn("municipio_dia_id", municipio_dia_id())
+        )
     adicional = agregar_meteorologia_adicional(df_inmet_horario)
     enriquecida = base.join(adicional, ["codigo_estacao", "data"], "left")
     return adicionar_lags_exatos(enriquecida, df_inmet_diario).select(
@@ -211,6 +374,7 @@ def criar_fato_municipio_dia(
         *METEOROLOGIA_ADICIONAL,
         "temperatura_media_lag_1d", "temperatura_media_lag_3d",
         "temperatura_media_lag_7d",
+        *[c for c in AUDITORIA_PAINEL if c in enriquecida.columns],
     ).withColumn("ano", F.year("data"))
 
 
@@ -250,25 +414,34 @@ def criar_fato_municipio_dia_cid(
         .join(df_mapa_municipios, "codigo_municipio_sih", "left")
         .join(df_mapa_cid, "codigo_cid", "left")
         .withColumn("faixa_etaria", faixa_etaria())
+        .withColumn("sexo_descricao", rotulo_sexo())
     )
     return (
         base.groupBy(
-            "data", "codigo_municipio", "codigo_categoria", "sexo", "faixa_etaria"
+            "data", "codigo_municipio", "codigo_categoria", "sexo",
+            "sexo_descricao", "faixa_etaria"
         )
         .agg(*expressoes_saude())
         .withColumn("municipio_dia_id", municipio_dia_id())
         .select(
             "municipio_dia_id", "data", "codigo_municipio",
-            "codigo_categoria", "sexo", "faixa_etaria", *METRICAS_SAUDE,
+            "codigo_categoria", "sexo", "sexo_descricao", "faixa_etaria",
+            *METRICAS_SAUDE,
         )
         .withColumn("ano", F.year("data"))
     )
 
 
 def criar_dim_municipio(df_ibge: DataFrame, df_municipio_estacao: DataFrame) -> DataFrame:
+    referencia_estacao = (
+        df_municipio_estacao
+        .filter(F.col("ano") == F.lit(ANALYSIS_END_DATE.year))
+        .select("CD_MUN", "codigo_estacao", "distancia_km")
+        .dropDuplicates(["CD_MUN"])
+    )
     return (
         df_ibge.alias("i")
-        .join(df_municipio_estacao.alias("m"), F.col("i.CD_MUN") == F.col("m.CD_MUN"), "left")
+        .join(referencia_estacao.alias("m"), F.col("i.CD_MUN") == F.col("m.CD_MUN"), "left")
         .select(
             F.col("i.CD_MUN").alias("codigo_municipio"),
             F.col("i.CD_MUN_6").alias("codigo_municipio_sih"),
@@ -327,6 +500,7 @@ def criar_dim_tempo(spark: SparkSession) -> DataFrame:
             F.date_format("data", "yyyy-MM").alias("ano_mes"),
             F.quarter("data").alias("trimestre"),
             F.dayofmonth("data").alias("dia_mes"),
+            F.dayofyear("data").alias("dia_ano"),
             F.dayofweek("data").alias("dia_semana_numero"),
             F.element_at(dias, F.dayofweek("data")).alias("dia_semana_nome"),
             F.dayofweek("data").isin(1, 7).alias("fim_de_semana"),

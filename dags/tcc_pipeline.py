@@ -86,6 +86,7 @@ SILVER_INMET_DIARIO_SCRIPT = (
 DQ_SILVER_INMET_DIARIO_SCRIPT = (
     f"{BASE_PATH}/src/quality/silver/dq_inmet_diario.py"
 )
+AUDIT_INMET_COVERAGE_SCRIPT = f"{BASE_PATH}/src/audit/inmet_coverage.py"
 
 
 # ============================================================
@@ -125,6 +126,7 @@ SILVER_SIH_SCRIPT = (
 DQ_SILVER_SIH_SCRIPT = (
     f"{BASE_PATH}/src/quality/silver/dq_sih.py"
 )
+AUDIT_SIH_COMPETENCE_SCRIPT = f"{BASE_PATH}/src/audit/sih_competence.py"
 
 
 # ============================================================
@@ -154,6 +156,15 @@ DQ_GOLD_FATO_INTERNACAO_METEOROLOGIA_SCRIPT = (
 CONSUMPTION_SCRIPT = f"{BASE_PATH}/src/consumption/build.py"
 DQ_CONSUMPTION_SCRIPT = (
     f"{BASE_PATH}/src/quality/consumption/dq_consumption.py"
+)
+DASHBOARD_ANALYTICS_SCRIPT = (
+    f"{BASE_PATH}/src/consumption/dashboard_analytics.py"
+)
+DQ_DASHBOARD_ANALYTICS_SCRIPT = (
+    f"{BASE_PATH}/src/quality/consumption/dq_dashboard_analytics.py"
+)
+VALIDATION_RESEARCH_SCRIPT = (
+    f"{BASE_PATH}/src/validation/research_questions.py"
 )
 
 
@@ -239,11 +250,22 @@ with DAG(
             durable=False,
         )
 
+        audit_inmet_coverage = SparkSubmitOperator(
+            task_id="audit_inmet_coverage",
+            application=AUDIT_INMET_COVERAGE_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-audit-inmet-coverage",
+            conf=SPARK_CONF_SHUFFLE_4,
+            retries=0,
+            durable=False,
+        )
+
         (
             silver_inmet
             >> dq_silver_inmet
             >> silver_inmet_diario
             >> dq_silver_inmet_diario
+            >> audit_inmet_coverage
         )
 
     # ========================================================
@@ -378,7 +400,17 @@ with DAG(
             durable=False,
         )
 
-        silver_sih >> dq_silver_sih
+        audit_sih_competence = SparkSubmitOperator(
+            task_id="audit_sih_competence",
+            application=AUDIT_SIH_COMPETENCE_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-audit-sih-competence",
+            conf=SPARK_CONF_SHUFFLE_4,
+            retries=0,
+            durable=False,
+        )
+
+        silver_sih >> dq_silver_sih >> audit_sih_competence
 
     # ========================================================
     # TASK GROUP - GOLD
@@ -486,12 +518,49 @@ with DAG(
             durable=False,
         )
 
-        build_consumption >> dq_consumption
+        build_dashboard_analytics = SparkSubmitOperator(
+            task_id="build_dashboard_analytics",
+            application=DASHBOARD_ANALYTICS_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-dashboard-analytics",
+            conf=SPARK_CONF_CONSUMPTION,
+            retries=1,
+            retry_delay=timedelta(minutes=1),
+            durable=False,
+        )
+
+        dq_dashboard_analytics = SparkSubmitOperator(
+            task_id="dq_dashboard_analytics",
+            application=DQ_DASHBOARD_ANALYTICS_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-dq-dashboard-analytics",
+            conf=SPARK_CONF_CONSUMPTION,
+            retries=0,
+            durable=False,
+        )
+
+        validate_research_questions = SparkSubmitOperator(
+            task_id="validate_research_questions",
+            application=VALIDATION_RESEARCH_SCRIPT,
+            conn_id=SPARK_CONNECTION,
+            name="tcc-validacao-perguntas-pesquisa",
+            conf=SPARK_CONF_CONSUMPTION,
+            retries=0,
+            durable=False,
+        )
+
+        (
+            build_consumption
+            >> dq_consumption
+            >> build_dashboard_analytics
+            >> dq_dashboard_analytics
+            >> validate_research_questions
+        )
 
     # Cada transformação aguarda aprovação de todas as fontes consumidas.
-    [dq_silver_ibge, dq_silver_inmet] >> gold_municipio_estacao
+    [dq_silver_ibge, audit_inmet_coverage] >> gold_municipio_estacao
     [
-        dq_silver_sih,
+        audit_sih_competence,
         dq_silver_ibge,
         dq_silver_cid10,
         dq_gold_municipio_estacao,
@@ -502,7 +571,7 @@ with DAG(
     ] >> gold_fato_internacao_meteorologia
     [
         dq_gold_fato_internacao_meteorologia,
-        dq_silver_sih,
+        audit_sih_competence,
         dq_silver_inmet,
         dq_silver_inmet_diario,
     ] >> build_consumption

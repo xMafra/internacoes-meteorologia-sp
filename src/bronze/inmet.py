@@ -3,7 +3,11 @@ from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 
-BASE_URL = "https://portal.inmet.gov.br/uploads/dadoshistoricos"
+# O acesso direto por HTTPS ocasionalmente é encerrado pelo balanceador do
+# portal. A rota HTTP oficial responde 302 e estabelece a sessão antes de
+# redirecionar para o mesmo recurso HTTPS; os bytes continuam trafegando por
+# TLS e a URL final é validada pelo ``urlopen``.
+BASE_URL = "http://portal.inmet.gov.br/uploads/dadoshistoricos"
 
 USER_AGENT = "Mozilla/5.0"
 

@@ -51,11 +51,23 @@ def validar_fato_meteorologia(df, df_fato, df_inmet) -> QualityReport:
     fato_sem_inmet = estacoes_fato.join(estacoes_inmet, "codigo_estacao", "left_anti").count()
     inmet_sem_fato = estacoes_inmet.join(estacoes_fato, "codigo_estacao", "left_anti").count()
     report.add("Estações da fato presentes no INMET", fato_sem_inmet == 0, f"ausentes={fato_sem_inmet}")
-    report.add("Estações INMET utilizadas na fato", inmet_sem_fato == 0, f"sem uso={inmet_sem_fato}")
+    report.add(
+        "Estações INMET não utilizadas na fato",
+        True,
+        f"sem uso={inmet_sem_fato}",
+        "INFO",
+        inmet_sem_fato,
+    )
 
     dentro_periodo = F.col("data_internacao").between(DATA_INMET_INICIO, DATA_INMET_FIM)
     sem_match_dentro = df.filter(dentro_periodo & (F.col("meteorologia_disponivel") == 0)).count()
-    report.add("Sem match dentro do período INMET", sem_match_dentro == 0, f"internações={sem_match_dentro}")
+    report.add(
+        "Sem match dentro do período INMET",
+        sem_match_dentro == 0,
+        f"internações={sem_match_dentro}",
+        "WARNING",
+        sem_match_dentro,
+    )
     fora_periodo = df.filter(~dentro_periodo).count()
     report.add("Sem meteorologia por data fora do período", True, f"internações={fora_periodo:,}", "INFO", fora_periodo)
 
@@ -71,6 +83,7 @@ def validar_fato_meteorologia(df, df_fato, df_inmet) -> QualityReport:
         (F.col("meteorologia_disponivel") == 1) & (F.col("qtd_observacoes_inmet") != 24),
         "Matches com 24 observações de origem",
         report,
+        "WARNING",
     )
     validar_condicao(
         df,

@@ -27,8 +27,14 @@ def carregar_bloco():
     inicio = fonte.index("# 18. VALIDAÇÃO DE NULOS")
     fim = fonte.index("# 19. VALIDAÇÃO DE DISTÂNCIA", inicio)
     bloco = ast.parse(fonte[inicio:fim], filename=str(ARQUIVO))
-    imports = [node for node in ast.parse(fonte).body
-               if isinstance(node, (ast.Import, ast.ImportFrom))]
+    imports = [
+        node for node in ast.parse(fonte).body
+        if isinstance(node, (ast.Import, ast.ImportFrom))
+        and not (
+            isinstance(node, ast.ImportFrom)
+            and (node.module or "").startswith("src.")
+        )
+    ]
     modulo = ast.Module(body=imports + bloco.body, type_ignores=[])
     return compile(modulo, str(ARQUIVO), "exec"), bloco
 

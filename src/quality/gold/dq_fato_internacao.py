@@ -10,6 +10,7 @@ from src.common.validators import (
     validar_condicao, validar_nulos, validar_quantidade_distinta,
     validar_quantidade_registros, validar_tipos,
 )
+from src.common.sih_io import ler_silver_sih
 from src.quality.gold.common import criar_spark
 from src.quality.gold.quality_config import (
     CATEGORIAS_CID_COMPLEMENTARES, DIAGNOSTICOS_DISTINTOS_ESPERADOS, ESTACOES_ESPERADAS,
@@ -17,6 +18,7 @@ from src.quality.gold.quality_config import (
     SILVER_CID10_PATH, SILVER_IBGE_PATH, SILVER_SIH_PATH,
     TOTAL_INTERNACOES_ESPERADO,
 )
+from src.common.study_period import DATA_FIM, DATA_INICIO
 
 
 ESSENCIAIS = [
@@ -32,8 +34,32 @@ def validar_fato(df, df_sih, df_ibge, df_cid10, df_municipio_estacao) -> Quality
         return report
     validar_tipos(df, {"ano": "int", "data_internacao": "date", "idade": "bigint", "valor_total": "double"}, report)
     total_gold = validar_quantidade_registros(df, TOTAL_INTERNACOES_ESPERADO, report)
-    total_sih = df_sih.count()
-    report.add("Preservação do volume SIH", total_gold == total_sih, f"Silver SIH={total_sih:,}, Gold={total_gold:,}")
+    total_sih = df_sih.filter(F.col("DT_INTER").between(DATA_INICIO, DATA_FIM)).count()
+    report.add(
+        "Preservação do universo analítico SIH",
+        total_gold == total_sih,
+        f"Silver SIH por DT_INTER={total_sih:,}, Gold={total_gold:,}",
+    )
+    gold_ano = {
+        int(r["ano"]): r["count"]
+        for r in df.groupBy("ano").count().orderBy("ano").collect()
+    }
+    sih_ano = {
+        int(r["ano"]): r["count"]
+        for r in (
+            df_sih.filter(F.col("DT_INTER").between(DATA_INICIO, DATA_FIM))
+            .groupBy(F.year("DT_INTER").alias("ano"))
+            .count()
+            .orderBy("ano")
+            .collect()
+        )
+    }
+    report.add(
+        "Reconciliação anual Silver SIH x Gold",
+        gold_ano == sih_ano,
+        f"Silver={sih_ano}; Gold={gold_ano}",
+        metrica=str(gold_ano),
+    )
     validar_quantidade_distinta(df, "CD_MUN", MUNICIPIOS_ESPERADOS, report, "Municípios da fato")
     validar_quantidade_distinta(df, "codigo_estacao", ESTACOES_ESPERADAS, report, "Estações da fato")
     validar_quantidade_distinta(df, "codigo_cid", DIAGNOSTICOS_DISTINTOS_ESPERADOS, report, "Diagnósticos distintos")
@@ -47,9 +73,11 @@ def validar_fato(df, df_sih, df_ibge, df_cid10, df_municipio_estacao) -> Quality
     sem_ibge = municipios_gold.join(municipios_ibge, "CD_MUN", "left_anti").count()
     report.add("Integridade IBGE", sem_ibge == 0, f"municípios sem IBGE={sem_ibge}")
 
-    estacoes_gold = df.select("CD_MUN", "codigo_estacao").distinct()
-    estacoes_dim = df_municipio_estacao.select("CD_MUN", "codigo_estacao").distinct()
-    sem_estacao = estacoes_gold.join(estacoes_dim, ["CD_MUN", "codigo_estacao"], "left_anti").count()
+    estacoes_gold = df.select("CD_MUN", "ano", "codigo_estacao").distinct()
+    estacoes_dim = df_municipio_estacao.select("CD_MUN", "ano", "codigo_estacao").distinct()
+    sem_estacao = estacoes_gold.join(
+        estacoes_dim, ["CD_MUN", "ano", "codigo_estacao"], "left_anti"
+    ).count()
     report.add("Integridade município-estação", sem_estacao == 0, f"relações inválidas={sem_estacao}")
 
     categorias_gold = df.select("codigo_categoria").distinct()
@@ -60,6 +88,19 @@ def validar_fato(df, df_sih, df_ibge, df_cid10, df_municipio_estacao) -> Quality
     )
     valores_sem_cid = [row["codigo_categoria"] for row in categorias_sem_cid.collect()]
     report.add("Integridade CID-10", not valores_sem_cid, f"categorias sem correspondência={valores_sem_cid}")
+    cid_sem_match_ano = {
+        int(r["ano"]): r["count"]
+        for r in (
+            df.filter(F.col("codigo_categoria").isNull())
+            .groupBy("ano").count().orderBy("ano").collect()
+        )
+    }
+    report.add(
+        "Códigos CID sem correspondência por ano",
+        not cid_sem_match_ano,
+        f"registros={cid_sem_match_ano}",
+        metrica=str(cid_sem_match_ano),
+    )
     report.add(
         "Categorias CID complementares",
         True,
@@ -74,7 +115,7 @@ def main() -> int:
     try:
         report = validar_fato(
             spark.read.parquet(FATO_INTERNACAO_PATH),
-            spark.read.option("recursiveFileLookup", "true").parquet(SILVER_SIH_PATH),
+            ler_silver_sih(spark, SILVER_SIH_PATH),
             spark.read.parquet(SILVER_IBGE_PATH),
             spark.read.parquet(SILVER_CID10_PATH),
             spark.read.parquet(MUNICIPIO_ESTACAO_PATH),

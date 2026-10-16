@@ -18,6 +18,7 @@ sys.path.insert(
 # ============================================================
 
 from src.silver.sih import criar_spark, processar_sih
+from src.common.study_period import EXPECTED_SIH_FILES, SIH_COMPETENCES
 
 
 # ============================================================
@@ -28,18 +29,11 @@ def obter_periodos() -> list[tuple[int, int]]:
     """
     Retorna todas as competências do SIH utilizadas no TCC.
 
-    Período oficial:
-        janeiro/2023 até dezembro/2025
-
-    Total esperado:
-        36 competências
+    A janela inclui o recorte analítico e a cauda posterior necessária para
+    capturar internações de 2025 processadas em 2026.
     """
 
-    return [
-        (ano, mes)
-        for ano in range(2023, 2026)
-        for mes in range(1, 13)
-    ]
+    return list(SIH_COMPETENCES)
 
 
 # ============================================================
@@ -233,11 +227,11 @@ if __name__ == "__main__":
 
         periodos = obter_periodos()
 
-        if len(periodos) != 36:
+        if len(periodos) != EXPECTED_SIH_FILES:
 
             raise RuntimeError(
                 "Quantidade inesperada de competências SIH. "
-                f"Esperado=36, obtido={len(periodos)}."
+                f"Esperado={EXPECTED_SIH_FILES}, obtido={len(periodos)}."
             )
 
         processar_lote(

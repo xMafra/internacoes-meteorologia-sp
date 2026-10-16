@@ -13,7 +13,7 @@ from src.common.validators import (
 )
 from src.quality.silver.spark_session import criar_spark
 from src.quality.silver.quality_config import (
-    DATA_FIM, DATA_INICIO, INMET_DIARIO_ESPERADO,
+    DATA_INMET_FIM, DATA_INMET_INICIO, INMET_DIARIO_ESPERADO,
     INMET_DIARIO_PATH, INMET_ESTACOES_ESPERADAS,
 )
 
@@ -43,8 +43,14 @@ def validar_inmet_diario(df) -> QualityReport:
     validar_quantidade_distinta(df, "codigo_estacao", INMET_ESTACOES_ESPERADAS, report, "Estações")
     validar_chave_unica(df, ["codigo_estacao", "data"], report)
     validar_nulos(df, ["codigo_estacao", "data", "estacao", "latitude_estacao", "longitude_estacao", "qtd_observacoes"], report)
-    validar_periodo(df, "data", DATA_INICIO, DATA_FIM, report)
-    validar_condicao(df, F.col("qtd_observacoes") != 24, "24 observações de origem", report)
+    validar_periodo(df, "data", DATA_INMET_INICIO, DATA_INMET_FIM, report)
+    validar_condicao(
+        df,
+        F.col("qtd_observacoes") != 24,
+        "24 observações de origem",
+        report,
+        "WARNING",
+    )
     validar_intervalo(df, "latitude_estacao", -90, 90, report)
     validar_intervalo(df, "longitude_estacao", -180, 180, report)
     for qtd, indicador in QTD_INDICADOR.items():

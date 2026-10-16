@@ -4,6 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from pyspark.sql import functions as F
+from pyspark import StorageLevel
 
 from src.common.validators import (
     QualityReport, imprimir_relatorio, registrar_cobertura,
@@ -14,7 +15,7 @@ from src.common.validators import (
 )
 from src.quality.silver.spark_session import criar_spark
 from src.quality.silver.quality_config import (
-    ANOS, DATA_FIM, DATA_INICIO, INMET_ESTACOES_ESPERADAS,
+    ANOS_INMET, DATA_INMET_FIM, DATA_INMET_INICIO, INMET_ESTACOES_ESPERADAS,
     INMET_HORARIO_ESPERADO, INMET_PATH,
 )
 
@@ -36,7 +37,13 @@ def validar_inmet(df) -> QualityReport:
     validar_quantidade_distinta(df, "codigo_estacao", INMET_ESTACOES_ESPERADAS, report, "Códigos de estação")
     validar_chave_unica(df, ["codigo_estacao", "data_hora_utc"], report)
     validar_nulos(df, ["codigo_estacao", "data_hora_utc", "estacao", "uf", "latitude", "longitude"], report)
-    validar_periodo(df, "data_hora_utc", f"{DATA_INICIO} 00:00:00", f"{DATA_FIM} 23:00:00", report)
+    validar_periodo(
+        df,
+        "data_hora_utc",
+        f"{DATA_INMET_INICIO} 00:00:00",
+        f"{DATA_INMET_FIM} 23:00:00",
+        report,
+    )
     validar_valores_aceitos(df, "uf", ["SP"], report)
     validar_intervalo(df, "latitude", -90, 90, report)
     validar_intervalo(df, "longitude", -180, 180, report)
@@ -46,27 +53,41 @@ def validar_inmet(df) -> QualityReport:
     validar_condicao(df, F.col("vento_velocidade_ms") < 0, "Vento não negativo", report)
     validar_intervalo(df, "temperatura_c", -30, 60, report, "WARNING")
     por_dia = df.groupBy("codigo_estacao", F.to_date("data_hora_utc").alias("data")).count()
-    validar_condicao(por_dia, F.col("count") != 24, "24 registros por dia/estação", report)
-    validar_quantidade_registros(por_dia, 43_840, report)
+    validar_condicao(
+        por_dia,
+        F.col("count") != 24,
+        "24 registros por dia/estação",
+        report,
+        "WARNING",
+    )
+    validar_quantidade_registros(por_dia, None, report)
     registrar_cobertura(df, VARIAVEIS, report)
     return report
 
 
 def main() -> int:
     spark = criar_spark("DQ-Silver-INMET-Horario")
+    df = None
     try:
         dataframes = [
             spark.read.option("mergeSchema", "true").parquet(f"{INMET_PATH}/{ano}")
-            for ano in ANOS
+            for ano in ANOS_INMET
         ]
         df = dataframes[0]
         for df_ano in dataframes[1:]:
             df = df.unionByName(df_ano, allowMissingColumns=True)
+        # O gate executa várias actions sobre a mesma união histórica.
+        # Persistência temporária evita reler os 12 conjuntos a cada regra;
+        # MEMORY_AND_DISK limita a pressão no driver.
+        df = df.persist(StorageLevel.MEMORY_AND_DISK)
+        df.count()
         report = validar_inmet(df)
         imprimir_relatorio(report)
         report.exigir_aprovacao()
         return 0
     finally:
+        if df is not None:
+            df.unpersist()
         spark.stop()
 
 

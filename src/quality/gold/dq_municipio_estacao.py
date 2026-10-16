@@ -14,12 +14,15 @@ from src.quality.gold.common import criar_spark
 from src.quality.gold.quality_config import (
     ESTACOES_ESPERADAS, MUNICIPIO_ESTACAO_PATH, MUNICIPIOS_ESPERADOS,
 )
+from src.common.study_period import ANALYSIS_YEARS
 
 
 COLUNAS = [
-    "CD_MUN", "NM_MUN", "SIGLA_UF", "latitude_municipio",
+    "CD_MUN", "NM_MUN", "SIGLA_UF", "ano", "latitude_municipio",
     "longitude_municipio", "codigo_estacao", "estacao",
     "latitude_estacao", "longitude_estacao", "distancia_km",
+    "dias_validos_temperatura", "dias_esperados_ano",
+    "cobertura_temperatura_pct", "criterio_selecao",
 ]
 
 
@@ -27,8 +30,8 @@ def validar_municipio_estacao(df) -> QualityReport:
     report = QualityReport("GOLD MUNICÍPIO ESTAÇÃO")
     if not validar_colunas_obrigatorias(df, COLUNAS, report):
         return report
-    validar_quantidade_registros(df, MUNICIPIOS_ESPERADOS, report)
-    validar_chave_unica(df, ["CD_MUN"], report)
+    validar_quantidade_registros(df, MUNICIPIOS_ESPERADOS * len(ANALYSIS_YEARS), report)
+    validar_chave_unica(df, ["CD_MUN", "ano"], report)
     validar_nulos(df, COLUNAS, report)
     validar_condicao(df, F.col("distancia_km") < 0, "Distâncias não negativas", report)
     validar_intervalo(df, "latitude_municipio", -90, 90, report)
@@ -36,6 +39,21 @@ def validar_municipio_estacao(df) -> QualityReport:
     validar_intervalo(df, "latitude_estacao", -90, 90, report)
     validar_intervalo(df, "longitude_estacao", -180, 180, report)
     validar_quantidade_distinta(df, "codigo_estacao", ESTACOES_ESPERADAS, report, "Estações utilizadas")
+    validar_condicao(
+        df,
+        ~F.col("ano").isin(list(ANALYSIS_YEARS)),
+        "Anos do mapa dentro do período analítico",
+        report,
+    )
+    validar_intervalo(df, "cobertura_temperatura_pct", 0, 100, report)
+    baixa = df.filter(F.col("cobertura_temperatura_pct") < 80).count()
+    report.add(
+        "Seleções abaixo de 80% de cobertura",
+        baixa == 0,
+        f"município-anos={baixa}",
+        "WARNING",
+        baixa,
+    )
     metricas = df.agg(F.avg("distancia_km").alias("media"), F.max("distancia_km").alias("maxima")).first()
     report.add("Distância média", True, f"{metricas['media']:.2f} km", "INFO", metricas["media"])
     report.add("Distância máxima", True, f"{metricas['maxima']:.2f} km", "INFO", metricas["maxima"])

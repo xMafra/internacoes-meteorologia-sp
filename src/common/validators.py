@@ -78,15 +78,50 @@ def validar_tipos(df: DataFrame, tipos: dict[str, str], report: QualityReport) -
     report.add("Tipos das colunas", not divergentes, "tipos esperados" if not divergentes else f"divergentes={divergentes}")
 
 
-def validar_quantidade_registros(df: DataFrame, esperado: int, report: QualityReport, nivel: Level = "ERROR") -> int:
+def validar_quantidade_registros(
+    df: DataFrame,
+    esperado: int | None,
+    report: QualityReport,
+    nivel: Level = "ERROR",
+) -> int:
     total = df.count()
-    report.add("Quantidade de registros", total == esperado, f"encontrado={total:,}, esperado={esperado:,}", nivel, total)
+    if esperado is None:
+        report.add(
+            "Quantidade de registros",
+            True,
+            f"encontrado={total:,}; sem cardinalidade rígida",
+            "INFO",
+            total,
+        )
+    else:
+        report.add(
+            "Quantidade de registros",
+            total == esperado,
+            f"encontrado={total:,}, esperado={esperado:,}",
+            nivel,
+            total,
+        )
     return total
 
 
-def validar_quantidade_distinta(df: DataFrame, coluna: str, esperado: int, report: QualityReport, nome: str | None = None) -> int:
+def validar_quantidade_distinta(
+    df: DataFrame,
+    coluna: str,
+    esperado: int | None,
+    report: QualityReport,
+    nome: str | None = None,
+) -> int:
     total = df.select(coluna).distinct().count()
-    report.add(nome or f"Valores distintos de {coluna}", total == esperado, f"encontrado={total}, esperado={esperado}", metrica=total)
+    titulo = nome or f"Valores distintos de {coluna}"
+    if esperado is None:
+        report.add(titulo, True, f"encontrado={total}; sem cardinalidade rígida", "INFO", total)
+    else:
+        report.add(
+            titulo,
+            total == esperado,
+            f"encontrado={total}, esperado={esperado}",
+            metrica=total,
+        )
     return total
 
 

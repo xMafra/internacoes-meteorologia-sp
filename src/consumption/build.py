@@ -9,6 +9,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from pyspark.sql import SparkSession
 
+from src.common.spark_io import destino_parquet_atomico
+from src.common.sih_io import ler_silver_sih
+from src.common.study_period import ANALYSIS_YEARS, INMET_YEARS, SIH_COMPETENCES
+
 from src.consumption.transformations import (
     criar_dim_cid,
     criar_dim_estacao,
@@ -36,7 +40,7 @@ CONSUMPTION = f"{BASE_PATH}/consumption"
 def ler_inmet_horario(spark):
     partes = [
         spark.read.option("mergeSchema", "true").parquet(f"{SILVER_INMET}/{ano}")
-        for ano in range(2023, 2026)
+        for ano in INMET_YEARS
     ]
     resultado = partes[0]
     for parte in partes[1:]:
@@ -50,17 +54,8 @@ def ler_inmet_horario(spark):
 
 
 def ler_sih(spark):
-    """Lê as raízes anuais não particionadas da Silver SIH."""
-    partes = [
-        spark.read.option("mergeSchema", "true")
-        .option("recursiveFileLookup", "true")
-        .parquet(f"{SILVER_SIH}/{ano}")
-        for ano in range(2023, 2026)
-    ]
-    resultado = partes[0]
-    for parte in partes[1:]:
-        resultado = resultado.unionByName(parte, allowMissingColumns=True)
-    return resultado
+    """Lê somente as competências mensais oficiais da Silver SIH."""
+    return ler_silver_sih(spark, SILVER_SIH)
 
 
 def gravar(df, nome, particoes=None, reparticoes=None):
@@ -71,12 +66,16 @@ def gravar(df, nome, particoes=None, reparticoes=None):
     if particoes:
         escritor = escritor.partitionBy(*particoes)
     caminho = f"{CONSUMPTION}/{nome}"
-    escritor.parquet(caminho)
+    with destino_parquet_atomico(caminho) as caminho_staging:
+        escritor.parquet(caminho_staging)
     print(f"Gravado: {caminho}")
 
 
 def main():
-    spark = SparkSession.builder.appName("TCC-Consumption-PowerBI").getOrCreate()
+    spark = (
+        SparkSession.builder.appName("TCC-Consumption-PowerBI")
+        .getOrCreate()
+    )
     spark.sparkContext.setLogLevel("ERROR")
     try:
         gold = spark.read.option("mergeSchema", "true").parquet(GOLD_FATO)
@@ -100,14 +99,22 @@ def main():
         )
         if total_divergencias:
             divergencias.orderBy("codigo_estacao").show(40, truncate=False)
-            print("Dimensão usará deterministicamente o cadastro mais recente (2025).")
+            print(
+                "Dimensão usará deterministicamente o cadastro do ano "
+                f"mais recente ({ANALYSIS_YEARS[-1]})."
+            )
 
         mapa_municipios = criar_mapa_municipios(ibge)
         mapa_cid = criar_mapa_cid_resolvido(gold)
 
         fatos_e_dimensoes = {
             "fato_municipio_dia": criar_fato_municipio_dia(
-                gold, inmet_horario, inmet_diario
+                gold,
+                inmet_horario,
+                inmet_diario,
+                ibge,
+                municipio_estacao,
+                spark,
             ),
             "fato_municipio_dia_cid": criar_fato_municipio_dia_cid(
                 sih, mapa_municipios, mapa_cid
@@ -118,7 +125,7 @@ def main():
             "dim_estacao": criar_dim_estacao(inmet_horario),
         }
 
-        # Três partições anuais por fato: leitura temporal eficiente e poucos
+        # Uma partição física por ano analítico: leitura temporal eficiente e poucos
         # arquivos para importação no Power BI. Dimensões são pequenas e não
         # recebem particionamento físico.
         gravar(fatos_e_dimensoes["dim_municipio"], "dim_municipio", reparticoes=1)
@@ -127,11 +134,11 @@ def main():
         gravar(fatos_e_dimensoes["dim_estacao"], "dim_estacao", reparticoes=1)
         gravar(
             fatos_e_dimensoes["fato_municipio_dia"],
-            "fato_municipio_dia", ["ano"], 3,
+            "fato_municipio_dia", ["ano"], len(ANALYSIS_YEARS),
         )
         gravar(
             fatos_e_dimensoes["fato_municipio_dia_cid"],
-            "fato_municipio_dia_cid", ["ano"], 3,
+            "fato_municipio_dia_cid", ["ano"], len(ANALYSIS_YEARS),
         )
         return 0
     finally:

@@ -31,6 +31,9 @@ venv/
 env/
 ENV/
 
+# Dependências JavaScript instaladas localmente
+node_modules/
+
 
 # ==============================
 # JUPYTER
@@ -87,3 +90,14 @@ metastore_db/
 airflow/logs/
 airflow/airflow.db
 airflow/airflow.cfg
+
+
+# ==============================
+# ARTEFATOS REGENERÁVEIS
+# ==============================
+
+# Revisões, diagnósticos e saídas temporárias de ferramentas
+artifacts/
+
+# Build intermediário da apresentação (renders, rascunhos e dependências)
+docs/.apresentacao_build/

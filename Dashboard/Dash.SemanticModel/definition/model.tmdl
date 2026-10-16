@@ -6,7 +6,7 @@ model Model
 		legacyRedirects
 		returnErrorValuesAsNull
 
-annotation PBI_QueryOrder = ["fato_municipio_dia","fato_municipio_dia_cid","dim_municipio","dim_cid","dim_tempo","dim_estacao"]
+annotation PBI_QueryOrder = ["fato_municipio_dia","fato_municipio_dia_cid","dim_municipio","dim_cid","dim_tempo","dim_estacao","analitico_contraste_municipio","analitico_temperatura_faixa","analitico_temporal_ano","analitico_sazonalidade_mes","analitico_cid_resumo","analitico_demografia_resumo","analitico_lag_resumo"]
 
 annotation __PBI_TimeIntelligenceEnabled = 1
 
@@ -23,6 +23,13 @@ ref table dim_cid
 ref table dim_tempo
 ref table dim_estacao
 ref table Defasagem
+ref table analitico_contraste_municipio
+ref table analitico_temperatura_faixa
+ref table analitico_temporal_ano
+ref table analitico_sazonalidade_mes
+ref table analitico_cid_resumo
+ref table analitico_demografia_resumo
+ref table analitico_lag_resumo
 
 ref cultureInfo pt-BR
 

@@ -1,0 +1,159 @@
+table analitico_demografia_resumo
+	lineageTag: 6dd26812-333d-4fd7-9ede-6fd01099209d
+
+	measure 'Chave CID Selecionada' =
+			VAR Categoria = SELECTEDVALUE(dim_cid[codigo_categoria])
+			VAR Grupo = SELECTEDVALUE(dim_cid[codigo_grupo])
+			VAR Capitulo = SELECTEDVALUE(dim_cid[codigo_capitulo])
+			RETURN SWITCH(TRUE(), NOT ISBLANK(Categoria), "CATEGORIA_" & Categoria, NOT ISBLANK(Grupo), "GRUPO_" & Grupo, NOT ISBLANK(Capitulo), "CAPITULO_" & Capitulo, "TOTAL")
+		displayFolder: 09 - Auxiliares
+		lineageTag: 32e98cbb-94b6-454c-b2fb-e0147ec0676f
+
+	measure 'Mediana Contraste Demográfico' =
+			VAR Chave = [Chave CID Selecionada]
+			RETURN CALCULATE(MAX(analitico_demografia_resumo[mediana_diferenca_relativa]), analitico_demografia_resumo[chave_alvo] = Chave)
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 06 - Demografia
+		lineageTag: 3d9e19e5-2b67-41bc-87eb-fdc8d5b7d95e
+
+	measure 'Q1 Contraste Demográfico' =
+			VAR Chave = [Chave CID Selecionada]
+			RETURN CALCULATE(MAX(analitico_demografia_resumo[q1]), analitico_demografia_resumo[chave_alvo] = Chave)
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 06 - Demografia
+		lineageTag: 4e72a8cb-cd2b-4f2f-9818-a820d4535902
+
+	measure 'Q3 Contraste Demográfico' =
+			VAR Chave = [Chave CID Selecionada]
+			RETURN CALCULATE(MAX(analitico_demografia_resumo[q3]), analitico_demografia_resumo[chave_alvo] = Chave)
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 06 - Demografia
+		lineageTag: 06b0d5b6-c68f-4892-837a-679da82d1338
+
+	measure 'Municípios Válidos Demográfico' =
+			VAR Chave = [Chave CID Selecionada]
+			RETURN CALCULATE(MAX(analitico_demografia_resumo[municipios_validos]), analitico_demografia_resumo[chave_alvo] = Chave)
+		formatString: 0
+		displayFolder: 06 - Demografia
+		lineageTag: a4c6acf2-ef5e-461f-a332-72930c956521
+
+	measure '% Positivos Demográfico' =
+			VAR Chave = [Chave CID Selecionada]
+			RETURN DIVIDE(CALCULATE(MAX(analitico_demografia_resumo[percentual_positivo]), analitico_demografia_resumo[chave_alvo] = Chave), 100)
+		formatString: 0.00%
+		displayFolder: 06 - Demografia
+		lineageTag: e63b19b1-86a0-43fb-8a65-d7fe28a23730
+
+	measure '% Negativos Demográfico' =
+			VAR Chave = [Chave CID Selecionada]
+			RETURN DIVIDE(CALCULATE(MAX(analitico_demografia_resumo[percentual_negativo]), analitico_demografia_resumo[chave_alvo] = Chave), 100)
+		formatString: 0.00%
+		displayFolder: 06 - Demografia
+		lineageTag: 6a706dd9-9df9-4213-badf-a1f79754e4a5
+
+	measure 'Volume Internações Demográfico' =
+			VAR Chave = [Chave CID Selecionada]
+			RETURN CALCULATE(MAX(analitico_demografia_resumo[internacoes_total]), analitico_demografia_resumo[chave_alvo] = Chave)
+		formatString: #,0
+		displayFolder: 06 - Demografia
+		lineageTag: ab34005c-d3c7-4b0d-a3ba-d3955f31f3c5
+
+	column chave_alvo
+		dataType: string
+		lineageTag: d8f0e226-ab37-40cc-bd15-be65eed9267b
+		summarizeBy: none
+		sourceColumn: chave_alvo
+
+	column faixa_etaria
+		dataType: string
+		lineageTag: 8070b026-83ae-42b0-ad09-bd8a9883e797
+		summarizeBy: none
+		sourceColumn: faixa_etaria
+		sortByColumn: ordem_faixa_etaria
+
+	column ordem_faixa_etaria
+		dataType: int64
+		formatString: 0
+		lineageTag: f9cfd5d1-4d1e-4548-a2c5-30bd71c79253
+		summarizeBy: none
+		sourceColumn: ordem_faixa_etaria
+
+	column sexo
+		dataType: string
+		lineageTag: 6e8e9d14-3f74-4902-b25f-d027816ae119
+		summarizeBy: none
+		sourceColumn: sexo
+
+	column sexo_descricao
+		dataType: string
+		lineageTag: 522bf3a8-fe20-48cd-af9e-2e229bf73116
+		summarizeBy: none
+		sourceColumn: sexo_descricao
+		sortByColumn: ordem_sexo
+
+	column ordem_sexo
+		dataType: int64
+		formatString: 0
+		lineageTag: c4ec66d2-e9c5-4693-a259-27f85224308e
+		summarizeBy: none
+		sourceColumn: ordem_sexo
+
+	column municipios_validos
+		dataType: int64
+		formatString: 0
+		lineageTag: 1a51307e-7f41-4490-8f75-c2440d63d111
+		summarizeBy: sum
+		sourceColumn: municipios_validos
+
+	column q1
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: aa1d86bc-9b04-4605-8f47-d68628b3dc17
+		summarizeBy: average
+		sourceColumn: q1
+
+	column mediana_diferenca_relativa
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 1ca5d964-635e-4392-90b8-4654fcdd24dd
+		summarizeBy: average
+		sourceColumn: mediana_diferenca_relativa
+
+	column q3
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: c8ffd695-1b27-47fa-91f1-f124839c99d4
+		summarizeBy: average
+		sourceColumn: q3
+
+	column percentual_positivo
+		dataType: double
+		lineageTag: 488cd4a8-322d-4a48-bdc1-3432da1a90d1
+		summarizeBy: average
+		sourceColumn: percentual_positivo
+
+	column percentual_negativo
+		dataType: double
+		lineageTag: 67b04ce8-a2a0-4bb2-983b-c8b6debec2cb
+		summarizeBy: average
+		sourceColumn: percentual_negativo
+
+	column internacoes_total
+		dataType: int64
+		formatString: 0
+		lineageTag: b5903a32-1670-4387-a17b-1b363ba6a062
+		summarizeBy: sum
+		sourceColumn: internacoes_total
+
+	partition analitico_demografia_resumo = m
+		mode: import
+		source =
+				let
+				    Fonte = Folder.Files("C:\Users\Guilherme\Desktop\TCC\data\consumption\dashboard_analytics\demografia_resumo"),
+				    Arquivos = Table.SelectRows(Fonte, each [Extension] = ".parquet"),
+				    Dados = Table.AddColumn(Arquivos, "Tabela", each Parquet.Document([Content])),
+				    Expandido = Table.ExpandTableColumn(Dados, "Tabela", {"chave_alvo","faixa_etaria","ordem_faixa_etaria","sexo","sexo_descricao","ordem_sexo","municipios_validos","q1","mediana_diferenca_relativa","q3","percentual_positivo","percentual_negativo","internacoes_total"}),
+				    Selecionado = Table.SelectColumns(Expandido,{"chave_alvo","faixa_etaria","ordem_faixa_etaria","sexo","sexo_descricao","ordem_sexo","municipios_validos","q1","mediana_diferenca_relativa","q3","percentual_positivo","percentual_negativo","internacoes_total"}),
+				    Tipos = Table.TransformColumnTypes(Selecionado,{{"chave_alvo", type text},{"faixa_etaria", type text},{"ordem_faixa_etaria", Int64.Type},{"sexo", type text},{"sexo_descricao", type text},{"ordem_sexo", Int64.Type},{"municipios_validos", Int64.Type},{"q1", type number},{"mediana_diferenca_relativa", type number},{"q3", type number},{"percentual_positivo", type number},{"percentual_negativo", type number},{"internacoes_total", Int64.Type}})
+				in Tipos
+

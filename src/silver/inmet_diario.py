@@ -11,11 +11,17 @@
 # Saída:
 #   /home/jovyan/work/data/silver/inmet_diario
 #
-# Período:
-#   2023–2025
+# Período técnico: 25/12/2014–31/12/2025. Os sete dias anteriores ao
+# recorte analítico existem exclusivamente para os lags de janeiro/2015.
 # ==============================================================
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 from pyspark.sql import SparkSession
+from pyspark import StorageLevel
 from pyspark.sql.window import Window
 
 from pyspark.sql.functions import (
@@ -29,7 +35,15 @@ from pyspark.sql.functions import (
     round as spark_round,
     row_number,
     trim,
+    year,
 )
+
+from src.common.study_period import (
+    DATA_INMET_FIM,
+    DATA_INMET_INICIO,
+    INMET_YEARS,
+)
+from src.common.spark_io import destino_parquet_atomico
 
 
 # ==============================================================
@@ -88,7 +102,7 @@ dfs_inmet_por_ano = [
         .option("mergeSchema", "true")
         .parquet(f"{SILVER_INMET}/{ano}")
     )
-    for ano in range(2023, 2026)
+    for ano in INMET_YEARS
 ]
 
 df_inmet = dfs_inmet_por_ano[0]
@@ -228,17 +242,17 @@ if nulos_data > 0:
 
 
 # ==============================================================
-# FILTRO 2023–2025
+# FILTRO TÉCNICO
 # ==============================================================
 
-print("Filtrando período 2023–2025...")
+print(f"Filtrando período técnico {DATA_INMET_INICIO} a {DATA_INMET_FIM}...")
 
 df_inmet = (
     df_inmet
     .filter(
-        (col("data") >= "2023-01-01")
+        (col("data") >= DATA_INMET_INICIO)
         &
-        (col("data") <= "2025-12-31")
+        (col("data") <= DATA_INMET_FIM)
     )
 )
 
@@ -879,6 +893,12 @@ df_diario = (
     )
 )
 
+# As validações abaixo executam várias ações sobre a mesma agregação.
+# Sem persistência, cada count/show reprocessa toda a Silver horária.
+df_diario = df_diario.persist(
+    StorageLevel.MEMORY_AND_DISK
+)
+
 
 # ==============================================================
 # RESULTADOS
@@ -898,7 +918,7 @@ print(
 )
 
 print(
-    f"Registros horários 2023–2025: "
+    f"Registros horários no período técnico: "
     f"{total_periodo}"
 )
 
@@ -996,14 +1016,14 @@ print(
 # ==============================================================
 
 #
-# 2023 = 365 dias
-# 2024 = 366 dias
-# 2025 = 365 dias
-#
-# Total = 1096 dias
-#
-
-dias_esperados = 1096
+# A rede de estações varia ao longo do tempo; portanto esta conta é apenas
+# o teto teórico para estações presentes durante toda a janela, não um gate.
+dias_esperados = (
+    spark.sql(
+        f"SELECT datediff(to_date('{DATA_INMET_FIM}'), "
+        f"to_date('{DATA_INMET_INICIO}')) + 1 AS dias"
+    ).first()["dias"]
+)
 
 total_esperado = (
     total_estacoes
@@ -1030,8 +1050,8 @@ if total_diario == total_esperado:
 else:
 
     print(
-        "⚠ Atenção: existem dias ausentes "
-        "ou estações com cobertura incompleta."
+        "INFO: a diferença para o teto reflete entrada/saída de estações "
+        "e lacunas, detalhadas pelo DQ histórico."
     )
 
 
@@ -1327,17 +1347,22 @@ print(
     "\nGravando Silver INMET Diário..."
 )
 
-(
-    df_diario
-    .write
-    .mode("overwrite")
-    .partitionBy(
-        "data"
+with destino_parquet_atomico(SILVER_INMET_DIARIO) as caminho_staging:
+    (
+        df_diario
+        .withColumn(
+            "ano_particao",
+            year(col("data")),
+        )
+        .write
+        .mode("overwrite")
+        .partitionBy(
+            "ano_particao"
+        )
+        .parquet(
+            caminho_staging
+        )
     )
-    .parquet(
-        SILVER_INMET_DIARIO
-    )
-)
 
 
 # ==============================================================
@@ -1493,6 +1518,9 @@ print(
 print(
     "=" * 60
 )
+
+
+df_diario.unpersist()
 
 
 # ==============================================================

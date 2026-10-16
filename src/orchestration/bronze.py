@@ -1,12 +1,13 @@
-"""Wrappers Bronze com recorte fixo; imports e I/O somente em runtime."""
+"""Wrappers Bronze; imports e I/O somente em runtime."""
 
 from pathlib import Path
 from shutil import copyfileobj
 from tempfile import TemporaryDirectory
 
+from src.common.study_period import INMET_YEARS, periodo_sih_kwargs
 
-PERIODO_SIH = dict(ano_inicio=2023, mes_inicio=1, ano_fim=2025, mes_fim=12)
-ANOS_INMET = (2023, 2024, 2025)
+PERIODO_SIH = periodo_sih_kwargs()
+ANOS_INMET = INMET_YEARS
 ANO_IBGE = 2022
 
 
@@ -71,7 +72,9 @@ def dq_bronze_sih() -> None:
 def dq_bronze_inmet() -> None:
     from src.quality.bronze.dq_inmet import validar_inmet
 
-    _exigir_aprovacao(validar_inmet(ano_inicio=2023, ano_fim=2025))
+    _exigir_aprovacao(
+        validar_inmet(ano_inicio=ANOS_INMET[0], ano_fim=ANOS_INMET[-1])
+    )
 
 
 def dq_bronze_ibge() -> None:

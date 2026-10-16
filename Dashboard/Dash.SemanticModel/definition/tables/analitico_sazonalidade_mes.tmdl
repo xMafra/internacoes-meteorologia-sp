@@ -1,0 +1,86 @@
+table analitico_sazonalidade_mes
+	lineageTag: fe2382ea-1bca-4f83-a32c-924237fb4dea
+
+	measure 'Mediana Municipal Internações Mês' = MAX(analitico_sazonalidade_mes[mediana_media_internacoes_municipal])
+		formatString: 0.00
+		displayFolder: 04 - Temporal
+		lineageTag: 7fc5b03a-0a8a-4764-a469-2b0230664264
+
+	measure 'Mediana Municipal Temperatura Mês' = MAX(analitico_sazonalidade_mes[mediana_temperatura_municipal])
+		formatString: 0.0
+		displayFolder: 04 - Temporal
+		lineageTag: 4e7185f6-d4d2-48e7-b5e1-8130237e4dce
+
+	measure 'Média Agregada Internações Mês' = MAX(analitico_sazonalidade_mes[media_internacoes_agregada])
+		formatString: 0.00
+		displayFolder: 04 - Temporal
+		lineageTag: c8ad5517-32a6-4a00-b486-ee109db59636
+
+	column mes
+		dataType: int64
+		formatString: 0
+		lineageTag: ab9240ba-01bb-4b2c-9141-ccad541c671e
+		summarizeBy: none
+		sourceColumn: mes
+
+	column mes_abreviado
+		dataType: string
+		lineageTag: c4ca9064-b64c-41fe-9a58-a98c4a56f5e1
+		summarizeBy: none
+		sourceColumn: mes_abreviado
+		sortByColumn: mes
+
+	column internacoes_total
+		dataType: int64
+		formatString: 0
+		lineageTag: ae1aa4be-8fc8-47cd-b5cf-e9b8e9d37108
+		summarizeBy: sum
+		sourceColumn: internacoes_total
+
+	column municipio_dias
+		dataType: int64
+		formatString: 0
+		lineageTag: 4519b388-767a-45ae-a2e0-7aa6e97ec763
+		summarizeBy: sum
+		sourceColumn: municipio_dias
+
+	column temperatura_media_agregada
+		dataType: double
+		formatString: 0.0
+		lineageTag: 80898049-af22-4942-b5d3-4f4b4aa314ae
+		summarizeBy: average
+		sourceColumn: temperatura_media_agregada
+
+	column media_internacoes_agregada
+		dataType: double
+		formatString: 0.00
+		lineageTag: 475c7579-4f1b-4304-8596-d00480b241d1
+		summarizeBy: average
+		sourceColumn: media_internacoes_agregada
+
+	column mediana_media_internacoes_municipal
+		dataType: double
+		formatString: 0.00
+		lineageTag: 88f9b8c6-0bd3-4110-a653-4bd3036e09f9
+		summarizeBy: average
+		sourceColumn: mediana_media_internacoes_municipal
+
+	column mediana_temperatura_municipal
+		dataType: double
+		formatString: 0.0
+		lineageTag: cd44d508-a199-4ef3-a176-9297aad40aaa
+		summarizeBy: average
+		sourceColumn: mediana_temperatura_municipal
+
+	partition analitico_sazonalidade_mes = m
+		mode: import
+		source =
+				let
+				    Fonte = Folder.Files("C:\Users\Guilherme\Desktop\TCC\data\consumption\dashboard_analytics\sazonalidade_mes"),
+				    Arquivos = Table.SelectRows(Fonte, each [Extension] = ".parquet"),
+				    Dados = Table.AddColumn(Arquivos, "Tabela", each Parquet.Document([Content])),
+				    Expandido = Table.ExpandTableColumn(Dados, "Tabela", {"mes","internacoes_total","municipio_dias","temperatura_media_agregada","media_internacoes_agregada","mediana_media_internacoes_municipal","mediana_temperatura_municipal","mes_abreviado"}),
+				    Selecionado = Table.SelectColumns(Expandido,{"mes","mes_abreviado","internacoes_total","municipio_dias","temperatura_media_agregada","media_internacoes_agregada","mediana_media_internacoes_municipal","mediana_temperatura_municipal"}),
+				    Tipos = Table.TransformColumnTypes(Selecionado,{{"mes", Int64.Type},{"mes_abreviado", type text},{"internacoes_total", Int64.Type},{"municipio_dias", Int64.Type},{"temperatura_media_agregada", type number},{"media_internacoes_agregada", type number},{"mediana_media_internacoes_municipal", type number},{"mediana_temperatura_municipal", type number}})
+				in Tipos
+

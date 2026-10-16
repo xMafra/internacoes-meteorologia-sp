@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import tempfile
 from zipfile import ZipFile
@@ -8,6 +9,9 @@ from dbfread import DBF
 from pyreaddbc.readdbc import dbc2dbf
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
+
+from src.common.spark_io import destino_parquet_atomico
+from src.common.study_period import SIH_COMPETENCE_START
 
 
 TAMANHO_LOTE = 20_000
@@ -84,6 +88,31 @@ def obter_caminho_silver(
         / str(ano)
         / f"{mes:02d}"
     )
+
+
+def silver_mensal_valida(
+    spark: SparkSession,
+    caminho: Path,
+) -> bool:
+    """Confirma que uma competência existente terminou e preserva o reuso."""
+
+    if os.getenv("TCC_FORCE_REPROCESS", "0") == "1":
+        return False
+
+    if not (caminho / "_SUCCESS").is_file():
+        return False
+
+    if not any(caminho.glob("*.parquet")):
+        return False
+
+    try:
+        colunas = set(spark.read.parquet(str(caminho)).columns)
+    except Exception as erro:
+        print(f"Silver existente ilegível em {caminho}: {erro}")
+        return False
+
+    essenciais = {"DT_INTER", "MUNIC_RES", "DIAG_PRINC"}
+    return essenciais.issubset(colunas)
 
 
 def converter_dbc_para_dbf(
@@ -344,17 +373,18 @@ def salvar_silver(
     com compressão Snappy.
     """
 
-    (
-        df.write
-        .mode("overwrite")
-        .option(
-            "compression",
-            "snappy",
+    with destino_parquet_atomico(caminho_saida) as caminho_staging:
+        (
+            df.coalesce(1).write
+            .mode("overwrite")
+            .option(
+                "compression",
+                "snappy",
+            )
+            .parquet(
+                caminho_staging
+            )
         )
-        .parquet(
-            str(caminho_saida)
-        )
-    )
 
     print(
         f"Silver salva em: {caminho_saida}"
@@ -417,6 +447,13 @@ def processar_sih(
         ano,
         mes,
     )
+
+    if silver_mensal_valida(spark, caminho_silver):
+        print(
+            "Silver mensal já concluída e validada; "
+            f"reutilizando {caminho_silver}"
+        )
+        return
 
     # --------------------------------------------------------------
     # 1. Validação do DBC
@@ -684,8 +721,8 @@ if __name__ == "__main__":
 
     try:
         processar_sih(
-            ano=2023,
-            mes=3,
+            ano=SIH_COMPETENCE_START[0],
+            mes=SIH_COMPETENCE_START[1],
             spark=spark,
         )
 

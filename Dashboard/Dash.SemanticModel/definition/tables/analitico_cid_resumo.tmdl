@@ -1,0 +1,174 @@
+table analitico_cid_resumo
+	lineageTag: 809c68d7-c04e-425c-b457-089b8c2d9e6d
+
+	measure 'Chave CID em Escopo' =
+			SWITCH(
+				TRUE(),
+				ISINSCOPE(dim_cid[descricao_categoria]), "CATEGORIA_" & SELECTEDVALUE(dim_cid[codigo_categoria]),
+				ISINSCOPE(dim_cid[descricao_grupo]), "GRUPO_" & SELECTEDVALUE(dim_cid[codigo_grupo]),
+				"CAPITULO_" & SELECTEDVALUE(dim_cid[codigo_capitulo])
+			)
+		displayFolder: 09 - Auxiliares
+		lineageTag: 916174db-9070-48fe-be51-1c812daa64cf
+
+	measure 'Mediana Contraste CID' =
+			VAR Chave = [Chave CID em Escopo]
+			RETURN CALCULATE(MAX(analitico_cid_resumo[mediana_diferenca_relativa]), analitico_cid_resumo[chave_alvo] = Chave)
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 05 - CID
+		lineageTag: 57d617ec-6f8d-484a-8a87-afc6198e3e57
+
+	measure 'Q1 Contraste CID' =
+			VAR Chave = [Chave CID em Escopo]
+			RETURN CALCULATE(MAX(analitico_cid_resumo[q1]), analitico_cid_resumo[chave_alvo] = Chave)
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 05 - CID
+		lineageTag: 1a4c504f-0668-49f7-9bfb-e3045d491aad
+
+	measure 'Q3 Contraste CID' =
+			VAR Chave = [Chave CID em Escopo]
+			RETURN CALCULATE(MAX(analitico_cid_resumo[q3]), analitico_cid_resumo[chave_alvo] = Chave)
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 05 - CID
+		lineageTag: 5f8d4f39-a41d-42e9-b641-80abae074a9a
+
+	measure '% Municípios Positivos CID' =
+			VAR Chave = [Chave CID em Escopo]
+			RETURN DIVIDE(CALCULATE(MAX(analitico_cid_resumo[percentual_positivo]), analitico_cid_resumo[chave_alvo] = Chave), 100)
+		formatString: 0.00%
+		displayFolder: 05 - CID
+		lineageTag: 17b3f8e0-1514-4036-b6b0-002259540f7c
+
+	measure '% Municípios Negativos CID' =
+			VAR Chave = [Chave CID em Escopo]
+			RETURN DIVIDE(CALCULATE(MAX(analitico_cid_resumo[percentual_negativo]), analitico_cid_resumo[chave_alvo] = Chave), 100)
+		formatString: 0.00%
+		displayFolder: 05 - CID
+		lineageTag: 6ef34fdf-4a89-4376-b6b0-ba1b85deca69
+
+	measure 'Municípios Válidos CID' =
+			VAR Chave = [Chave CID em Escopo]
+			RETURN CALCULATE(MAX(analitico_cid_resumo[municipios_validos]), analitico_cid_resumo[chave_alvo] = Chave)
+		formatString: 0
+		displayFolder: 05 - CID
+		lineageTag: 7bc89d0c-5aa5-4196-9116-d215f249e4a7
+
+	measure 'Volume Internações CID Analítico' =
+			VAR Chave = [Chave CID em Escopo]
+			RETURN CALCULATE(MAX(analitico_cid_resumo[internacoes_total]), analitico_cid_resumo[chave_alvo] = Chave)
+		formatString: #,0
+		displayFolder: 05 - CID
+		lineageTag: a282769c-8040-4886-ab53-b24a1efc6446
+
+	measure 'Mediana Média Frio CID' =
+			VAR Chave = [Chave CID em Escopo]
+			RETURN CALCULATE(MAX(analitico_cid_resumo[mediana_media_frio]), analitico_cid_resumo[chave_alvo] = Chave)
+		formatString: 0.000
+		displayFolder: 05 - CID
+		lineageTag: 82e135da-6aa0-434e-a1a4-edb8b5ff0801
+
+	measure 'Mediana Média Quente CID' =
+			VAR Chave = [Chave CID em Escopo]
+			RETURN CALCULATE(MAX(analitico_cid_resumo[mediana_media_quente]), analitico_cid_resumo[chave_alvo] = Chave)
+		formatString: 0.000
+		displayFolder: 05 - CID
+		lineageTag: b9b68cab-85b3-4dab-8641-5128c4fbb570
+
+	column chave_alvo
+		dataType: string
+		lineageTag: 9be9de94-ca30-4fe9-bb2d-d5b7dc266dbe
+		summarizeBy: none
+		sourceColumn: chave_alvo
+
+	column nivel_cid
+		dataType: string
+		lineageTag: c6adcf00-c4db-4e93-ac19-416f04cc9195
+		summarizeBy: none
+		sourceColumn: nivel_cid
+
+	column ordem_nivel_cid
+		dataType: int64
+		formatString: 0
+		lineageTag: 7f295e36-31bc-460e-bc4f-1072dce1835f
+		summarizeBy: none
+		sourceColumn: ordem_nivel_cid
+
+	column rotulo_alvo
+		dataType: string
+		lineageTag: d6781265-b2e0-4ac9-9c22-09b2d09d2c08
+		summarizeBy: none
+		sourceColumn: rotulo_alvo
+
+	column municipios_validos
+		dataType: int64
+		formatString: 0
+		lineageTag: 540a679b-a2ba-4a65-a6d3-f912ee93267c
+		summarizeBy: sum
+		sourceColumn: municipios_validos
+
+	column q1
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 5ff356ca-8d30-4694-a2df-e87c090e3a7d
+		summarizeBy: average
+		sourceColumn: q1
+
+	column mediana_diferenca_relativa
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: c0fa4b74-e1e6-4ecc-a87b-ae497bf37217
+		summarizeBy: average
+		sourceColumn: mediana_diferenca_relativa
+
+	column q3
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: d39a22b9-279d-4574-8461-14d9ba947245
+		summarizeBy: average
+		sourceColumn: q3
+
+	column percentual_positivo
+		dataType: double
+		lineageTag: 22c76c8a-c824-4d1a-9da0-f1b0f9f79b3a
+		summarizeBy: average
+		sourceColumn: percentual_positivo
+
+	column percentual_negativo
+		dataType: double
+		lineageTag: 000a7c55-67d1-4aa6-abb7-ce31619ee59c
+		summarizeBy: average
+		sourceColumn: percentual_negativo
+
+	column internacoes_total
+		dataType: int64
+		formatString: 0
+		lineageTag: d6c5243c-c3d2-4ca3-882d-2b50aa48ed4f
+		summarizeBy: sum
+		sourceColumn: internacoes_total
+
+	column mediana_media_frio
+		dataType: double
+		formatString: 0.000
+		lineageTag: 36a47f61-7e88-447d-9096-11106c5ca750
+		summarizeBy: average
+		sourceColumn: mediana_media_frio
+
+	column mediana_media_quente
+		dataType: double
+		formatString: 0.000
+		lineageTag: 7aead3b3-7335-4370-8596-925c4dc4a7c0
+		summarizeBy: average
+		sourceColumn: mediana_media_quente
+
+	partition analitico_cid_resumo = m
+		mode: import
+		source =
+				let
+				    Fonte = Folder.Files("C:\Users\Guilherme\Desktop\TCC\data\consumption\dashboard_analytics\cid_resumo"),
+				    Arquivos = Table.SelectRows(Fonte, each [Extension] = ".parquet"),
+				    Dados = Table.AddColumn(Arquivos, "Tabela", each Parquet.Document([Content])),
+				    Expandido = Table.ExpandTableColumn(Dados, "Tabela", {"chave_alvo","nivel_cid","ordem_nivel_cid","rotulo_alvo","municipios_validos","q1","mediana_diferenca_relativa","q3","percentual_positivo","percentual_negativo","internacoes_total","mediana_media_frio","mediana_media_quente"}),
+				    Selecionado = Table.SelectColumns(Expandido,{"chave_alvo","nivel_cid","ordem_nivel_cid","rotulo_alvo","municipios_validos","q1","mediana_diferenca_relativa","q3","percentual_positivo","percentual_negativo","internacoes_total","mediana_media_frio","mediana_media_quente"}),
+				    Tipos = Table.TransformColumnTypes(Selecionado,{{"chave_alvo", type text},{"nivel_cid", type text},{"ordem_nivel_cid", Int64.Type},{"rotulo_alvo", type text},{"municipios_validos", Int64.Type},{"q1", type number},{"mediana_diferenca_relativa", type number},{"q3", type number},{"percentual_positivo", type number},{"percentual_negativo", type number},{"internacoes_total", Int64.Type},{"mediana_media_frio", type number},{"mediana_media_quente", type number}})
+				in Tipos
+

@@ -1,0 +1,260 @@
+table analitico_contraste_municipio
+	lineageTag: 2b889793-19a8-484a-b6f9-5bddbbb48ff5
+
+	measure 'Mediana Contraste Intramunicipal' =
+			MEDIANX(
+				FILTER(analitico_contraste_municipio, analitico_contraste_municipio[contraste_relativo_valido] = 1),
+				analitico_contraste_municipio[diferenca_relativa]
+			)
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 03 - Intramunicipal
+		lineageTag: c7e117a7-7275-4836-846a-935acfe4baac
+
+	measure 'Q1 Contraste Intramunicipal' =
+			PERCENTILEX.INC(
+				FILTER(analitico_contraste_municipio, analitico_contraste_municipio[contraste_relativo_valido] = 1),
+				analitico_contraste_municipio[diferenca_relativa], 0.25
+			)
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 03 - Intramunicipal
+		lineageTag: 8fcb7124-bee7-4dcf-8401-7a7669cdc06a
+
+	measure 'Q3 Contraste Intramunicipal' =
+			PERCENTILEX.INC(
+				FILTER(analitico_contraste_municipio, analitico_contraste_municipio[contraste_relativo_valido] = 1),
+				analitico_contraste_municipio[diferenca_relativa], 0.75
+			)
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 03 - Intramunicipal
+		lineageTag: 5adfa2ef-4ce8-470e-9321-d5ba4c3565aa
+
+	measure 'Municípios Válidos' = SUM(analitico_contraste_municipio[contraste_relativo_valido])
+		formatString: 0
+		displayFolder: 03 - Intramunicipal
+		lineageTag: 8c1589c5-0754-4226-ba1b-9ee870d50989
+
+	measure '% Municípios Contraste Positivo' =
+			DIVIDE(
+				COUNTROWS(FILTER(analitico_contraste_municipio, analitico_contraste_municipio[contraste_relativo_valido] = 1 && analitico_contraste_municipio[diferenca_relativa] > 0)),
+				[Municípios Válidos]
+			)
+		formatString: 0.00%
+		displayFolder: 03 - Intramunicipal
+		lineageTag: ea925a96-71f0-4a84-b842-f89c66b17627
+
+	measure '% Municípios Contraste Negativo' =
+			DIVIDE(
+				COUNTROWS(FILTER(analitico_contraste_municipio, analitico_contraste_municipio[contraste_relativo_valido] = 1 && analitico_contraste_municipio[diferenca_relativa] < 0)),
+				[Municípios Válidos]
+			)
+		formatString: 0.00%
+		displayFolder: 03 - Intramunicipal
+		lineageTag: 3be57578-982c-4f56-8dac-805d842de54e
+
+	measure '% Municípios Acima +1%' = DIVIDE(COUNTROWS(FILTER(analitico_contraste_municipio, analitico_contraste_municipio[contraste_relativo_valido] = 1 && analitico_contraste_municipio[diferenca_relativa] > 0.01)), [Municípios Válidos])
+		formatString: 0.00%
+		displayFolder: 03 - Intramunicipal
+		lineageTag: 7aa280e9-f594-4ac9-b716-55e9c6e2e2ca
+
+	measure '% Municípios Aprox. Zero' = DIVIDE(COUNTROWS(FILTER(analitico_contraste_municipio, analitico_contraste_municipio[contraste_relativo_valido] = 1 && ABS(analitico_contraste_municipio[diferenca_relativa]) <= 0.01)), [Municípios Válidos])
+		formatString: 0.00%
+		displayFolder: 03 - Intramunicipal
+		lineageTag: 71064781-2ce9-4670-b56b-06c7ec4daae6
+
+	measure '% Municípios Abaixo -1%' = DIVIDE(COUNTROWS(FILTER(analitico_contraste_municipio, analitico_contraste_municipio[contraste_relativo_valido] = 1 && analitico_contraste_municipio[diferenca_relativa] < -0.01)), [Municípios Válidos])
+		formatString: 0.00%
+		displayFolder: 03 - Intramunicipal
+		lineageTag: 18edf575-7275-4643-a031-ee374fe79c11
+
+	measure '% Municípios por Classe' =
+			DIVIDE(
+				[Municípios Válidos],
+				CALCULATE([Municípios Válidos], REMOVEFILTERS(analitico_contraste_municipio[Classe Contraste]))
+			)
+		formatString: 0.00%
+		displayFolder: 03 - Intramunicipal
+		lineageTag: 67c798c8-5e0b-4895-bcf6-31f2dddd4470
+
+	measure 'Contraste Relativo Município' = SELECTEDVALUE(analitico_contraste_municipio[diferenca_relativa])
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 08 - Territorial
+		lineageTag: fbe518d2-f4b3-4ba6-b144-c70a83905bf5
+
+	measure 'Média Frio Município' = SELECTEDVALUE(analitico_contraste_municipio[media_frio_municipio])
+		formatString: 0.00
+		displayFolder: 08 - Territorial
+		lineageTag: 45128e04-bd28-4a9c-9857-e85101e60acc
+
+	measure 'Média Quente Município' = SELECTEDVALUE(analitico_contraste_municipio[media_quente_municipio])
+		formatString: 0.00
+		displayFolder: 08 - Territorial
+		lineageTag: ba715985-97ef-4677-aea7-9ede921d4a92
+
+	measure 'Diferença Absoluta Município' = SELECTEDVALUE(analitico_contraste_municipio[diferenca_absoluta])
+		formatString: 0.00
+		displayFolder: 08 - Territorial
+		lineageTag: 02ded256-a0f1-47cf-92f2-d33e9e21803a
+
+	measure 'Dias Frios Município' = SELECTEDVALUE(analitico_contraste_municipio[dias_frios])
+		formatString: 0
+		displayFolder: 08 - Territorial
+		lineageTag: 1c7f83eb-301b-4658-8b9e-9a2a9fcf6e57
+
+	measure 'Dias Quentes Município' = SELECTEDVALUE(analitico_contraste_municipio[dias_quentes])
+		formatString: 0
+		displayFolder: 08 - Territorial
+		lineageTag: 42aff1e3-f7fb-4b89-aefc-2b063dd9ab8d
+
+	measure 'Volume Internações Município' = SELECTEDVALUE(analitico_contraste_municipio[internacoes_total])
+		formatString: 0
+		displayFolder: 08 - Territorial
+		lineageTag: ec1cfa5a-49db-44c4-95cd-cf052693ad7c
+
+	column codigo_municipio
+		dataType: string
+		lineageTag: 71b830ca-e9d2-450f-b6eb-42b34cd1ef37
+		summarizeBy: none
+		sourceColumn: codigo_municipio
+
+	column internacoes_frio
+		dataType: int64
+		formatString: 0
+		lineageTag: 5eb6d20e-fd98-4247-8af1-c061040636fa
+		summarizeBy: sum
+		sourceColumn: internacoes_frio
+
+	column internacoes_quente
+		dataType: int64
+		formatString: 0
+		lineageTag: b0b53330-7039-48ab-ad82-9d1914c93ea4
+		summarizeBy: sum
+		sourceColumn: internacoes_quente
+
+	column dias_frios
+		dataType: int64
+		formatString: 0
+		lineageTag: cf1f78d6-8f6f-406a-9284-5c67fd0d2469
+		summarizeBy: sum
+		sourceColumn: dias_frios
+
+	column dias_quentes
+		dataType: int64
+		formatString: 0
+		lineageTag: 6895b777-6fdc-458b-af59-21a87a5f6634
+		summarizeBy: sum
+		sourceColumn: dias_quentes
+
+	column internacoes_total
+		dataType: int64
+		formatString: 0
+		lineageTag: 2e616b04-cbcc-48d2-9767-7364e2f6e6eb
+		summarizeBy: sum
+		sourceColumn: internacoes_total
+
+	column municipio_dias_total
+		dataType: int64
+		formatString: 0
+		lineageTag: ef576d7d-e179-4705-a946-2b3fe35aed70
+		summarizeBy: sum
+		sourceColumn: municipio_dias_total
+
+	column media_frio_municipio
+		dataType: double
+		formatString: 0.00
+		lineageTag: f7797a22-b895-46cd-a3fa-6198d88db12d
+		summarizeBy: average
+		sourceColumn: media_frio_municipio
+
+	column media_quente_municipio
+		dataType: double
+		formatString: 0.00
+		lineageTag: 4fd48d57-7f64-447d-8eed-0064d3885d08
+		summarizeBy: average
+		sourceColumn: media_quente_municipio
+
+	column diferenca_absoluta
+		dataType: double
+		formatString: 0.00
+		lineageTag: 404cabe5-8aba-4997-b0c9-144b50bafc87
+		summarizeBy: average
+		sourceColumn: diferenca_absoluta
+
+	column diferenca_relativa
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 96d4350d-4e2e-4c95-9a8e-4a9023d2f834
+		summarizeBy: average
+		sourceColumn: diferenca_relativa
+
+	column elegivel_amostra
+		dataType: int64
+		formatString: 0
+		lineageTag: 0eb627ec-d4e7-4d88-b4af-13255172c62d
+		summarizeBy: sum
+		sourceColumn: elegivel_amostra
+
+	column contraste_relativo_valido
+		dataType: int64
+		formatString: 0
+		lineageTag: 4b724f3c-f9d7-4735-b754-8b794c5a9f66
+		summarizeBy: sum
+		sourceColumn: contraste_relativo_valido
+
+	column 'Classe Contraste' =
+			SWITCH(
+				TRUE(),
+				analitico_contraste_municipio[contraste_relativo_valido] <> 1, BLANK(),
+				analitico_contraste_municipio[diferenca_relativa] > 0.01, "> +1%",
+				analitico_contraste_municipio[diferenca_relativa] < -0.01, "< -1%",
+				"Entre -1% e +1%"
+			)
+		dataType: string
+		lineageTag: b13f21fc-ca64-4d48-94aa-a5938d7668bb
+		summarizeBy: none
+		sortByColumn: 'Ordem Classe Contraste'
+
+	column 'Ordem Classe Contraste' =
+			SWITCH(
+				TRUE(),
+				analitico_contraste_municipio[contraste_relativo_valido] <> 1, BLANK(),
+				analitico_contraste_municipio[diferenca_relativa] < -0.01, 1,
+				analitico_contraste_municipio[diferenca_relativa] > 0.01, 3,
+				2
+			)
+		dataType: int64
+		formatString: 0
+		lineageTag: 4043a6c6-abdb-4c65-8c89-a7aa2949e566
+		summarizeBy: none
+
+	column nome_municipio
+		dataType: string
+		lineageTag: 4c2fa00b-acef-4c73-8fea-e2f51063cb9a
+		summarizeBy: none
+		sourceColumn: nome_municipio
+
+	column latitude_municipio
+		dataType: double
+		lineageTag: 4f3ed720-1a81-4ee0-983a-31c2e592ad87
+		dataCategory: Latitude
+		summarizeBy: none
+		sourceColumn: latitude_municipio
+
+	column longitude_municipio
+		dataType: double
+		lineageTag: 1cd32fed-fce6-4b50-8eeb-8b77ccacb4c9
+		dataCategory: Longitude
+		summarizeBy: none
+		sourceColumn: longitude_municipio
+
+	partition analitico_contraste_municipio = m
+		mode: import
+		source =
+				let
+				    Fonte = Folder.Files("C:\Users\Guilherme\Desktop\TCC\data\consumption\dashboard_analytics\contraste_municipio"),
+				    Arquivos = Table.SelectRows(Fonte, each [Extension] = ".parquet"),
+				    Dados = Table.AddColumn(Arquivos, "Tabela", each Parquet.Document([Content])),
+				    Expandido = Table.ExpandTableColumn(Dados, "Tabela", {"codigo_municipio","internacoes_frio","internacoes_quente","dias_frios","dias_quentes","internacoes_total","municipio_dias_total","media_frio_municipio","media_quente_municipio","diferenca_absoluta","diferenca_relativa","elegivel_amostra","contraste_relativo_valido","nome_municipio","latitude_municipio","longitude_municipio"}),
+				    Selecionado = Table.SelectColumns(Expandido,{"codigo_municipio","internacoes_frio","internacoes_quente","dias_frios","dias_quentes","internacoes_total","municipio_dias_total","media_frio_municipio","media_quente_municipio","diferenca_absoluta","diferenca_relativa","elegivel_amostra","contraste_relativo_valido","nome_municipio","latitude_municipio","longitude_municipio"}),
+				    Tipos = Table.TransformColumnTypes(Selecionado,{{"codigo_municipio", type text},{"internacoes_frio", Int64.Type},{"internacoes_quente", Int64.Type},{"dias_frios", Int64.Type},{"dias_quentes", Int64.Type},{"internacoes_total", Int64.Type},{"municipio_dias_total", Int64.Type},{"media_frio_municipio", type number},{"media_quente_municipio", type number},{"diferenca_absoluta", type number},{"diferenca_relativa", type number},{"elegivel_amostra", Int64.Type},{"contraste_relativo_valido", Int64.Type},{"nome_municipio", type text},{"latitude_municipio", type number},{"longitude_municipio", type number}})
+				in Tipos
+

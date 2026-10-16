@@ -1,0 +1,98 @@
+table analitico_temperatura_faixa
+	lineageTag: b6dcec4f-f681-481a-ba0f-cffc9a82884b
+
+	measure 'Média Agregada por Faixa' = MAX(analitico_temperatura_faixa[media_agregada_municipio_dia])
+		formatString: 0.00
+		displayFolder: 02 - Temperatura
+		lineageTag: 2e518be3-f802-4751-ba43-20b532b3ca83
+
+	measure 'Mediana Municipal por Faixa' = MAX(analitico_temperatura_faixa[mediana_media_municipal])
+		formatString: 0.00
+		displayFolder: 02 - Temperatura
+		lineageTag: c41a280a-6e1a-43d1-bf2e-7d284487b9e0
+
+	measure 'Q1 Municipal por Faixa' = MAX(analitico_temperatura_faixa[q1_media_municipal])
+		formatString: 0.00
+		displayFolder: 02 - Temperatura
+		lineageTag: 9aab95bd-c737-44d4-af33-5273e2d35049
+
+	measure 'Q3 Municipal por Faixa' = MAX(analitico_temperatura_faixa[q3_media_municipal])
+		formatString: 0.00
+		displayFolder: 02 - Temperatura
+		lineageTag: 8a40b840-92fe-4015-95bc-5b31f384000e
+
+	column faixa_temperatura
+		dataType: string
+		lineageTag: a5a43127-6f93-4c47-a96b-e234240439b2
+		summarizeBy: none
+		sourceColumn: faixa_temperatura
+		sortByColumn: ordem_faixa
+
+	column ordem_faixa
+		dataType: int64
+		formatString: 0
+		lineageTag: 9726445e-d4c8-4868-ac69-3c768fd920a0
+		summarizeBy: none
+		sourceColumn: ordem_faixa
+
+	column internacoes_total
+		dataType: int64
+		formatString: 0
+		lineageTag: 5e9b6f11-274c-4dcd-a0b8-a09ad49286dd
+		summarizeBy: sum
+		sourceColumn: internacoes_total
+
+	column municipio_dias
+		dataType: int64
+		formatString: 0
+		lineageTag: 1ddd22f9-6fb4-4391-9cad-35ec375e5519
+		summarizeBy: sum
+		sourceColumn: municipio_dias
+
+	column media_agregada_municipio_dia
+		dataType: double
+		formatString: 0.00
+		lineageTag: 1fb47f5f-c3b9-4db0-aea9-71b00638dc52
+		summarizeBy: average
+		sourceColumn: media_agregada_municipio_dia
+
+	column municipios_com_dados
+		dataType: int64
+		formatString: 0
+		lineageTag: 85632484-c664-4a7f-be70-e24b8b72791f
+		summarizeBy: sum
+		sourceColumn: municipios_com_dados
+
+	column q1_media_municipal
+		dataType: double
+		formatString: 0.00
+		lineageTag: 6a6e69db-93a8-4643-bb7d-9e23616f6592
+		summarizeBy: average
+		sourceColumn: q1_media_municipal
+
+	column mediana_media_municipal
+		dataType: double
+		formatString: 0.00
+		lineageTag: e652cc08-e790-47af-98c7-a9e0ecc6aea3
+		summarizeBy: average
+		sourceColumn: mediana_media_municipal
+
+	column q3_media_municipal
+		dataType: double
+		formatString: 0.00
+		lineageTag: 1b954acc-8347-4e7d-82e0-43f4a04b4b9e
+		summarizeBy: average
+		sourceColumn: q3_media_municipal
+
+	partition analitico_temperatura_faixa = m
+		mode: import
+		source =
+				let
+				    Fonte = Folder.Files("C:\Users\Guilherme\Desktop\TCC\data\consumption\dashboard_analytics\temperatura_faixa"),
+				    Arquivos = Table.SelectRows(Fonte, each [Extension] = ".parquet"),
+				    Dados = Table.AddColumn(Arquivos, "Tabela", each Parquet.Document([Content])),
+				    Expandido = Table.ExpandTableColumn(Dados, "Tabela", {"faixa_temperatura","ordem_faixa","internacoes_total","municipio_dias","media_agregada_municipio_dia","municipios_com_dados","q1_media_municipal","mediana_media_municipal","q3_media_municipal"}),
+				    Selecionado = Table.SelectColumns(Expandido,{"faixa_temperatura","ordem_faixa","internacoes_total","municipio_dias","media_agregada_municipio_dia","municipios_com_dados","q1_media_municipal","mediana_media_municipal","q3_media_municipal"}),
+				    Tipos = Table.TransformColumnTypes(Selecionado,{{"faixa_temperatura", type text},{"ordem_faixa", Int64.Type},{"internacoes_total", Int64.Type},{"municipio_dias", Int64.Type},{"media_agregada_municipio_dia", type number},{"municipios_com_dados", Int64.Type},{"q1_media_municipal", type number},{"mediana_media_municipal", type number},{"q3_media_municipal", type number}})
+				in Tipos
+

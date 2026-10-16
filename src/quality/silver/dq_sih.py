@@ -11,8 +11,10 @@ from src.common.validators import (
     validar_nulos, validar_quantidade_registros, validar_tipos,
     validar_valores_aceitos,
 )
+from src.common.sih_io import ler_silver_sih
+from src.common.study_period import DATA_FIM, DATA_INICIO
 from src.quality.silver.spark_session import criar_spark
-from src.quality.silver.quality_config import ANOS, IBGE_PATH, SIH_PATH, SIH_TOTAL_ESPERADO
+from src.quality.silver.quality_config import ANOS_SIH, IBGE_PATH, SIH_PATH, SIH_TOTAL_ESPERADO
 
 
 COLUNAS = [
@@ -29,10 +31,32 @@ def validar_sih(df, df_ibge) -> QualityReport:
     validar_tipos(df, {"NASC": "date", "DT_INTER": "date", "DT_SAIDA": "date", "IDADE": "bigint", "VAL_TOT": "double"}, report)
     validar_quantidade_registros(df, SIH_TOTAL_ESPERADO, report)
     validar_nulos(df, ["ANO_CMPT", "MES_CMPT", "MUNIC_RES", "NM_MUN", "SIGLA_UF", "DT_INTER", "DT_SAIDA", "DIAG_PRINC"], report)
-    validar_valores_aceitos(df, "ANO_CMPT", [str(ano) for ano in ANOS], report)
+    validar_valores_aceitos(df, "ANO_CMPT", [str(ano) for ano in ANOS_SIH], report)
     validar_intervalo(df, "MES_CMPT", 1, 12, report)
     validar_valores_aceitos(df, "SIGLA_UF", ["SP"], report)
-    validar_valores_aceitos(df, "SEXO", ["1", "3"], report)
+    sexo_invalido_analitico = (
+        df.filter(F.col("DT_INTER").between(DATA_INICIO, DATA_FIM))
+        .filter(~F.col("SEXO").isin("1", "3"))
+        .count()
+    )
+    report.add(
+        "Domínio de SEXO no período analítico",
+        sexo_invalido_analitico == 0,
+        f"inválidos={sexo_invalido_analitico}, aceitos=['1', '3']",
+        metrica=sexo_invalido_analitico,
+    )
+    sexo_invalido_suporte = (
+        df.filter(~F.col("DT_INTER").between(DATA_INICIO, DATA_FIM))
+        .filter(~F.col("SEXO").isin("1", "3"))
+        .count()
+    )
+    report.add(
+        "SEXO fora do domínio em registros de suporte",
+        sexo_invalido_suporte == 0,
+        f"fora do recorte analítico={sexo_invalido_suporte}",
+        "WARNING",
+        sexo_invalido_suporte,
+    )
     validar_valores_aceitos(df, "MORTE", [0, 1], report)
     validar_intervalo(df, "IDADE", 0, 130, report)
     validar_condicao(df, F.col("DT_INTER") > F.col("DT_SAIDA"), "Ordem das datas de internação e saída", report)
@@ -51,7 +75,7 @@ def validar_sih(df, df_ibge) -> QualityReport:
 def main() -> int:
     spark = criar_spark("DQ-Silver-SIH")
     try:
-        df = spark.read.option("recursiveFileLookup", "true").parquet(SIH_PATH)
+        df = ler_silver_sih(spark, SIH_PATH)
         report = validar_sih(df, spark.read.parquet(IBGE_PATH))
         imprimir_relatorio(report)
         report.exigir_aprovacao()

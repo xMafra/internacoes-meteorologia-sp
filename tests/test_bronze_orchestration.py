@@ -12,24 +12,25 @@ from zipfile import ZipFile
 
 from src.orchestration import bronze as wrappers
 from src.quality.bronze.common import Report
+from src.common.study_period import INMET_YEARS, SIH_COMPETENCES, periodo_sih_kwargs
 
 
 class BronzeTests(unittest.TestCase):
     def test_periodos(self):
         with patch('src.bronze.sih.download_sih', return_value=Path('fake')) as fn:
-            self.assertEqual(len(wrappers.bronze_sih()), 36)
-            self.assertEqual(fn.call_args_list, [call(a, m) for a in range(2023, 2026) for m in range(1, 13)])
+            self.assertEqual(len(wrappers.bronze_sih()), len(SIH_COMPETENCES))
+            self.assertEqual(fn.call_args_list, [call(a, m) for a, m in SIH_COMPETENCES])
         with patch('src.bronze.inmet.download_inmet', return_value=Path('fake')) as fn:
             wrappers.bronze_inmet()
-            self.assertEqual(fn.call_args_list, [call(2023), call(2024), call(2025)])
+            self.assertEqual(fn.call_args_list, [call(ano) for ano in INMET_YEARS])
         with patch('src.bronze.ibge.download_malha_sp_2022', return_value=Path('fake')) as fn:
             wrappers.bronze_ibge()
             fn.assert_called_once_with()
 
     def test_gates(self):
         params = {
-            'sih': dict(ano_inicio=2023, mes_inicio=1, ano_fim=2025, mes_fim=12),
-            'inmet': dict(ano_inicio=2023, ano_fim=2025),
+            'sih': periodo_sih_kwargs(),
+            'inmet': dict(ano_inicio=INMET_YEARS[0], ano_fim=INMET_YEARS[-1]),
             'ibge': dict(ano=2022), 'cid10': {},
         }
         for fonte, kwargs in params.items():
@@ -74,8 +75,8 @@ class BronzeTests(unittest.TestCase):
     def test_acervo_existente_sem_rede_ou_escrita(self):
         root = Path(__file__).resolve().parents[1] / 'data/bronze'
         expected = [root / 'sih' / str(a) / f'RDSP{a % 100:02d}{m:02d}.dbc'
-                    for a in range(2023, 2026) for m in range(1, 13)]
-        expected += [root / 'inmet' / str(a) / f'{a}.zip' for a in range(2023, 2026)]
+                    for a, m in SIH_COMPETENCES]
+        expected += [root / 'inmet' / str(a) / f'{a}.zip' for a in INMET_YEARS]
         expected += [root / 'ibge/2022/SP_Municipios_2022.zip']
         from src.bronze.cid10 import ARQUIVOS_ESPERADOS
         expected += [root / 'cid10' / n for n in ['CID10CSV.zip', *ARQUIVOS_ESPERADOS]]
@@ -99,9 +100,12 @@ class BronzeTests(unittest.TestCase):
                 for fonte in ('sih', 'ibge', 'inmet', 'cid10'):
                     stack.enter_context(patch.object(wrappers, prefix + fonte, side_effect=AssertionError('I/O no parse')))
             dag = runpy.run_path('/opt/airflow/dags/tcc_pipeline.py')['dag']
-        self.assertEqual(set(dag.task_group.children), {'sih', 'ibge', 'inmet', 'cid10', 'gold'})
-        self.assertEqual(len(dag.tasks), 24)
-        self.assertEqual(len(dag.topological_sort()), 24)
+        self.assertEqual(
+            set(dag.task_group.children),
+            {'sih', 'ibge', 'inmet', 'cid10', 'gold', 'consumption'},
+        )
+        self.assertEqual(len(dag.tasks), 29)
+        self.assertEqual(len(dag.topological_sort()), 29)
         expected = {}
         for fonte, retries, delay in [('sih', 3, 2), ('inmet', 2, 2), ('ibge', 2, 1), ('cid10', 0, None)]:
             b, q, s = [f'{fonte}.{p}_{fonte}' for p in ('bronze', 'dq_bronze', 'silver')]
@@ -116,19 +120,35 @@ class BronzeTests(unittest.TestCase):
         expected.update({
             'inmet.silver_inmet_diario': {'inmet.dq_silver_inmet'},
             'inmet.dq_silver_inmet_diario': {'inmet.silver_inmet_diario'},
-            'gold.gold_municipio_estacao': {'ibge.dq_silver_ibge', 'inmet.dq_silver_inmet'},
+            'inmet.audit_inmet_coverage': {'inmet.dq_silver_inmet_diario'},
+            'sih.audit_sih_competence': {'sih.dq_silver_sih'},
+            'gold.gold_municipio_estacao': {'ibge.dq_silver_ibge', 'inmet.audit_inmet_coverage'},
             'gold.dq_gold_municipio_estacao': {'gold.gold_municipio_estacao'},
-            'gold.gold_fato_internacao': {'sih.dq_silver_sih', 'ibge.dq_silver_ibge', 'cid10.dq_silver_cid10', 'gold.dq_gold_municipio_estacao'},
+            'gold.gold_fato_internacao': {'sih.audit_sih_competence', 'ibge.dq_silver_ibge', 'cid10.dq_silver_cid10', 'gold.dq_gold_municipio_estacao'},
             'gold.dq_gold_fato_internacao': {'gold.gold_fato_internacao'},
             'gold.gold_fato_internacao_meteorologia': {'gold.dq_gold_fato_internacao', 'inmet.dq_silver_inmet_diario'},
             'gold.dq_gold_fato_internacao_meteorologia': {'gold.gold_fato_internacao_meteorologia'},
+            'consumption.build_consumption': {
+                'gold.dq_gold_fato_internacao_meteorologia',
+                'sih.audit_sih_competence', 'inmet.dq_silver_inmet',
+                'inmet.dq_silver_inmet_diario',
+            },
+            'consumption.dq_consumption': {'consumption.build_consumption'},
+            'consumption.validate_research_questions': {'consumption.dq_consumption'},
         })
         for t in dag.tasks:
             self.assertEqual(t.upstream_task_ids, expected[t.task_id], t.task_id)
             self.assertEqual(t.downstream_task_ids, {n for n, parents in expected.items() if t.task_id in parents})
             self.assertEqual(t.trigger_rule, 'all_success')
             if 'bronze' not in t.task_id:
-                self.assertEqual(t.retries, 0 if '.dq_' in t.task_id else 1)
+                self.assertEqual(
+                    t.retries,
+                    0 if (
+                        '.dq_' in t.task_id
+                        or '.audit_' in t.task_id
+                        or '.validate_' in t.task_id
+                    ) else 1,
+                )
                 self.assertEqual(t._conn_id, 'spark_default')
 
 

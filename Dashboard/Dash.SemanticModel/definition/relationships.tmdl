@@ -23,3 +23,7 @@ relationship 0c350809-e753-9b29-0802-6c2a46a3c484
 	fromColumn: fato_municipio_dia_cid.'Dados.codigo_categoria'
 	toColumn: dim_cid.codigo_categoria
 
+relationship 8fa91e5b-7cc8-41e0-b03c-c55b611a1bd2
+	fromColumn: analitico_contraste_municipio.codigo_municipio
+	toColumn: dim_municipio.'Dados.codigo_municipio'
+

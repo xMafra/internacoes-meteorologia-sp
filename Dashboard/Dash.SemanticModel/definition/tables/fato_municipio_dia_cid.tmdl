@@ -59,6 +59,25 @@ table fato_municipio_dia_cid
 		formatString: 0
 		lineageTag: 7fd6c8fc-6778-44e6-bd38-2d50fa89e7c5
 
+	measure 'Diferença Absoluta CID Frio Quente' =
+
+			[Média Internações CID Dias Frios]
+			    - [Média Internações CID Dias Quentes]
+		lineageTag: 21bc2ea1-3b04-4456-a648-f5a7e0f90e21
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Amostra CID Válida' =
+
+			IF(
+			    [Município-Dias Frios] >= 30
+			        && [Município-Dias Quentes] >= 30,
+			    1,
+			    0
+			)
+		formatString: 0
+		lineageTag: 1a4f78b2-ebcb-4f8a-a87a-6ef45c9c8139
+
 	column 'Dados.municipio_dia_id'
 		dataType: string
 		lineageTag: 4ecd119a-ca00-4a20-b877-929c83df8685
@@ -173,6 +192,14 @@ table fato_municipio_dia_cid
 
 		annotation PBI_FormatHint = {"currencyCulture":"pt-BR"}
 
+	column 'Dados.sexo_descricao'
+		dataType: string
+		lineageTag: 8ce0f5b1-53af-47a6-8ea5-6aa3e0f07e2b
+		summarizeBy: none
+		sourceColumn: Dados.sexo_descricao
+
+		annotation SummarizationSetBy = Automatic
+
 	partition fato_municipio_dia_cid = m
 		mode: import
 		source =
@@ -180,9 +207,9 @@ table fato_municipio_dia_cid
 				    Fonte = Folder.Files("C:\Users\Guilherme\Desktop\TCC\data\consumption\fato_municipio_dia_cid"),
 				    #"Linhas Filtradas" = Table.SelectRows(Fonte, each ([Extension] = ".parquet")),
 				    #"Personalização Adicionada" = Table.AddColumn(#"Linhas Filtradas", "Dados", each Parquet.Document([Content])),
-				    #"Dados Expandido" = Table.ExpandTableColumn(#"Personalização Adicionada", "Dados", {"municipio_dia_id", "data", "codigo_municipio", "codigo_categoria", "sexo", "faixa_etaria", "qtd_internacoes", "qtd_obitos", "dias_permanencia_total", "dias_uti_total", "valor_total_internacoes", "valor_total_uti"}, {"Dados.municipio_dia_id", "Dados.data", "Dados.codigo_municipio", "Dados.codigo_categoria", "Dados.sexo", "Dados.faixa_etaria", "Dados.qtd_internacoes", "Dados.qtd_obitos", "Dados.dias_permanencia_total", "Dados.dias_uti_total", "Dados.valor_total_internacoes", "Dados.valor_total_uti"}),
+				    #"Dados Expandido" = Table.ExpandTableColumn(#"Personalização Adicionada", "Dados", {"municipio_dia_id", "data", "codigo_municipio", "codigo_categoria", "sexo", "sexo_descricao", "faixa_etaria", "qtd_internacoes", "qtd_obitos", "dias_permanencia_total", "dias_uti_total", "valor_total_internacoes", "valor_total_uti"}, {"Dados.municipio_dia_id", "Dados.data", "Dados.codigo_municipio", "Dados.codigo_categoria", "Dados.sexo", "Dados.sexo_descricao", "Dados.faixa_etaria", "Dados.qtd_internacoes", "Dados.qtd_obitos", "Dados.dias_permanencia_total", "Dados.dias_uti_total", "Dados.valor_total_internacoes", "Dados.valor_total_uti"}),
 				    #"Colunas Removidas" = Table.RemoveColumns(#"Dados Expandido",{"Content", "Name", "Extension", "Date accessed", "Date modified", "Date created", "Attributes", "Folder Path"}),
-				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Colunas Removidas",{{"Dados.municipio_dia_id", type text}, {"Dados.data", type date}, {"Dados.codigo_municipio", type text}, {"Dados.codigo_categoria", type text}, {"Dados.sexo", type text}, {"Dados.faixa_etaria", type text}, {"Dados.qtd_internacoes", Int64.Type}, {"Dados.qtd_obitos", Int64.Type}, {"Dados.dias_permanencia_total", Int64.Type}, {"Dados.dias_uti_total", Int64.Type}, {"Dados.valor_total_internacoes", Currency.Type}, {"Dados.valor_total_uti", Currency.Type}})
+				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Colunas Removidas",{{"Dados.municipio_dia_id", type text}, {"Dados.data", type date}, {"Dados.codigo_municipio", type text}, {"Dados.codigo_categoria", type text}, {"Dados.sexo", type text}, {"Dados.sexo_descricao", type text}, {"Dados.faixa_etaria", type text}, {"Dados.qtd_internacoes", Int64.Type}, {"Dados.qtd_obitos", Int64.Type}, {"Dados.dias_permanencia_total", Int64.Type}, {"Dados.dias_uti_total", Int64.Type}, {"Dados.valor_total_internacoes", Currency.Type}, {"Dados.valor_total_uti", Currency.Type}})
 				in
 				    #"Tipo Alterado"
 

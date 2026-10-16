@@ -1,0 +1,171 @@
+table analitico_lag_resumo
+	lineageTag: 666d8aee-2907-47b7-8a08-f74f06f5dcbe
+
+	measure 'Mediana Contraste Lag' =
+			VAR Alvo = SELECTEDVALUE(analitico_lag_resumo[chave_alvo], "TOTAL")
+			RETURN CALCULATE(MAX(analitico_lag_resumo[mediana_diferenca_relativa]), REMOVEFILTERS(analitico_lag_resumo[alvo_analitico], analitico_lag_resumo[ordem_alvo]), analitico_lag_resumo[chave_alvo] = Alvo)
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 07 - Lags
+		lineageTag: c2e7b5cf-b11d-4e0c-90dc-6f02f401655a
+
+	measure 'Q1 Contraste Lag' =
+			VAR Alvo = SELECTEDVALUE(analitico_lag_resumo[chave_alvo], "TOTAL")
+			RETURN CALCULATE(MAX(analitico_lag_resumo[q1]), REMOVEFILTERS(analitico_lag_resumo[alvo_analitico], analitico_lag_resumo[ordem_alvo]), analitico_lag_resumo[chave_alvo] = Alvo)
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 07 - Lags
+		lineageTag: df2c4125-f157-4402-879b-d5458d560ae6
+
+	measure 'Q3 Contraste Lag' =
+			VAR Alvo = SELECTEDVALUE(analitico_lag_resumo[chave_alvo], "TOTAL")
+			RETURN CALCULATE(MAX(analitico_lag_resumo[q3]), REMOVEFILTERS(analitico_lag_resumo[alvo_analitico], analitico_lag_resumo[ordem_alvo]), analitico_lag_resumo[chave_alvo] = Alvo)
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 07 - Lags
+		lineageTag: bb67fb56-04b6-4bdf-9cf5-9b64e7be1246
+
+	measure '% Positivos Lag' =
+			VAR Alvo = SELECTEDVALUE(analitico_lag_resumo[chave_alvo], "TOTAL")
+			RETURN DIVIDE(CALCULATE(MAX(analitico_lag_resumo[percentual_positivo]), REMOVEFILTERS(analitico_lag_resumo[alvo_analitico], analitico_lag_resumo[ordem_alvo]), analitico_lag_resumo[chave_alvo] = Alvo), 100)
+		formatString: 0.00%
+		displayFolder: 07 - Lags
+		lineageTag: 87a8bcdb-8ff8-4cca-b87f-437cab210866
+
+	measure '% Negativos Lag' =
+			VAR Alvo = SELECTEDVALUE(analitico_lag_resumo[chave_alvo], "TOTAL")
+			RETURN DIVIDE(CALCULATE(MAX(analitico_lag_resumo[percentual_negativo]), REMOVEFILTERS(analitico_lag_resumo[alvo_analitico], analitico_lag_resumo[ordem_alvo]), analitico_lag_resumo[chave_alvo] = Alvo), 100)
+		formatString: 0.00%
+		displayFolder: 07 - Lags
+		lineageTag: a98ccdc6-12bd-48ce-bbd0-e9bf4031191e
+
+	measure 'Municípios Válidos Lag' =
+			VAR Alvo = SELECTEDVALUE(analitico_lag_resumo[chave_alvo], "TOTAL")
+			RETURN CALCULATE(MAX(analitico_lag_resumo[municipios_validos]), REMOVEFILTERS(analitico_lag_resumo[alvo_analitico], analitico_lag_resumo[ordem_alvo]), analitico_lag_resumo[chave_alvo] = Alvo)
+		formatString: 0
+		displayFolder: 07 - Lags
+		lineageTag: 2df50c34-2fb7-491e-9839-13bb1dd989a0
+
+	measure 'Mediana Média Frio Lag' =
+			VAR Alvo = SELECTEDVALUE(analitico_lag_resumo[chave_alvo], "TOTAL")
+			RETURN CALCULATE(MAX(analitico_lag_resumo[mediana_media_frio]), REMOVEFILTERS(analitico_lag_resumo[alvo_analitico], analitico_lag_resumo[ordem_alvo]), analitico_lag_resumo[chave_alvo] = Alvo)
+		formatString: 0.000
+		displayFolder: 07 - Lags
+		lineageTag: 73ba1f8f-7dd8-48f1-a977-4d92b8a1afc6
+
+	measure 'Mediana Média Quente Lag' =
+			VAR Alvo = SELECTEDVALUE(analitico_lag_resumo[chave_alvo], "TOTAL")
+			RETURN CALCULATE(MAX(analitico_lag_resumo[mediana_media_quente]), REMOVEFILTERS(analitico_lag_resumo[alvo_analitico], analitico_lag_resumo[ordem_alvo]), analitico_lag_resumo[chave_alvo] = Alvo)
+		formatString: 0.000
+		displayFolder: 07 - Lags
+		lineageTag: 6a84f622-a441-4684-aa4b-929876370b58
+
+	measure 'Linha Zero Lag' = 0
+		formatString: 0.00%
+		displayFolder: 09 - Auxiliares
+		lineageTag: a613663b-e762-4d0e-b123-588d4dca08e0
+
+	column chave_alvo
+		dataType: string
+		lineageTag: 72f29ecd-5153-476b-be67-f24abafb1249
+		summarizeBy: none
+		sourceColumn: chave_alvo
+
+	column alvo_analitico
+		dataType: string
+		lineageTag: 61c3adf5-f706-4170-a255-310e34e920b5
+		summarizeBy: none
+		sourceColumn: alvo_analitico
+		sortByColumn: ordem_alvo
+
+	column ordem_alvo
+		dataType: int64
+		formatString: 0
+		lineageTag: d3572780-c441-4b07-9b91-45925323ba33
+		summarizeBy: none
+		sourceColumn: ordem_alvo
+
+	column defasagem
+		dataType: string
+		lineageTag: 53b0760a-d2da-44ba-b635-e37b51b63bbe
+		summarizeBy: none
+		sourceColumn: defasagem
+		sortByColumn: ordem_defasagem
+
+	column ordem_defasagem
+		dataType: int64
+		formatString: 0
+		lineageTag: eb0ba91e-910e-45f2-b68b-b64a52ad338f
+		summarizeBy: none
+		sourceColumn: ordem_defasagem
+
+	column municipios_validos
+		dataType: int64
+		formatString: 0
+		lineageTag: b863d807-a0d4-4e21-a65b-08b8d0600359
+		summarizeBy: sum
+		sourceColumn: municipios_validos
+
+	column q1
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 029b7505-057b-4ddc-8cd2-bc416ecfbef4
+		summarizeBy: average
+		sourceColumn: q1
+
+	column mediana_diferenca_relativa
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: acb93d2f-0b0c-4620-a62b-32549af6820c
+		summarizeBy: average
+		sourceColumn: mediana_diferenca_relativa
+
+	column q3
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 2cb6c33f-38f4-4598-8e73-459ee984696c
+		summarizeBy: average
+		sourceColumn: q3
+
+	column percentual_positivo
+		dataType: double
+		lineageTag: 8e8a7836-cbde-4281-ae09-8eca3003564a
+		summarizeBy: average
+		sourceColumn: percentual_positivo
+
+	column percentual_negativo
+		dataType: double
+		lineageTag: 046ff284-c356-47c3-a5c9-73e75893f69f
+		summarizeBy: average
+		sourceColumn: percentual_negativo
+
+	column mediana_media_frio
+		dataType: double
+		formatString: 0.000
+		lineageTag: 657ca3a2-0ac2-45f0-8f72-8fa1e7a7a95c
+		summarizeBy: average
+		sourceColumn: mediana_media_frio
+
+	column mediana_media_quente
+		dataType: double
+		formatString: 0.000
+		lineageTag: 4a9c01e2-81bd-4065-a90e-a2e333bb4cb7
+		summarizeBy: average
+		sourceColumn: mediana_media_quente
+
+	column internacoes_total
+		dataType: int64
+		formatString: 0
+		lineageTag: 1efe99cb-f14b-47b3-83bc-e5be4de5faa2
+		summarizeBy: sum
+		sourceColumn: internacoes_total
+
+	partition analitico_lag_resumo = m
+		mode: import
+		source =
+				let
+				    Fonte = Folder.Files("C:\Users\Guilherme\Desktop\TCC\data\consumption\dashboard_analytics\lag_resumo"),
+				    Arquivos = Table.SelectRows(Fonte, each [Extension] = ".parquet"),
+				    Dados = Table.AddColumn(Arquivos, "Tabela", each Parquet.Document([Content])),
+				    Expandido = Table.ExpandTableColumn(Dados, "Tabela", {"chave_alvo","alvo_analitico","ordem_alvo","defasagem","ordem_defasagem","municipios_validos","q1","mediana_diferenca_relativa","q3","percentual_positivo","percentual_negativo","mediana_media_frio","mediana_media_quente","internacoes_total"}),
+				    Selecionado = Table.SelectColumns(Expandido,{"chave_alvo","alvo_analitico","ordem_alvo","defasagem","ordem_defasagem","municipios_validos","q1","mediana_diferenca_relativa","q3","percentual_positivo","percentual_negativo","mediana_media_frio","mediana_media_quente","internacoes_total"}),
+				    Tipos = Table.TransformColumnTypes(Selecionado,{{"chave_alvo", type text},{"alvo_analitico", type text},{"ordem_alvo", Int64.Type},{"defasagem", type text},{"ordem_defasagem", Int64.Type},{"municipios_validos", Int64.Type},{"q1", type number},{"mediana_diferenca_relativa", type number},{"q3", type number},{"percentual_positivo", type number},{"percentual_negativo", type number},{"mediana_media_frio", type number},{"mediana_media_quente", type number},{"internacoes_total", Int64.Type}})
+				in Tipos
+

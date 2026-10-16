@@ -25,9 +25,16 @@ def possui_chamada(node, metodo):
 def carregar_fluxo(persistir):
     fonte = ARQUIVO.read_text(encoding="utf-8")
     arvore = ast.parse(fonte)
-    imports_helper = [n for n in arvore.body
-                      if isinstance(n, (ast.Import, ast.ImportFrom))
-                      or isinstance(n, ast.FunctionDef) and n.name == "validar_colunas"]
+    imports_helper = [
+        n for n in arvore.body
+        if (
+            isinstance(n, (ast.Import, ast.ImportFrom))
+            and not (
+                isinstance(n, ast.ImportFrom)
+                and (n.module or "").startswith("src.")
+            )
+        ) or isinstance(n, ast.FunctionDef) and n.name == "validar_colunas"
+    ]
     def trecho(inicio, fim):
         return ast.parse(fonte[fonte.index(inicio):fonte.index(fim)]).body
     # A preparação da fato, métricas iniciais e todo o fluxo até a escrita
@@ -80,7 +87,8 @@ class PersistenciaInmetTests(unittest.TestCase):
         df_fato = self.spark.createDataFrame(fato, self.schema_fato)
         namespace = dict(df_inmet=self.spark.createDataFrame(inmet, self.schema_inmet),
                          df_fato=df_fato, total_fato=len(fato), fato_fora_periodo=2,
-                         DATA_INICIO="2023-01-01", DATA_FIM="2025-12-31")
+                         DATA_INICIO="2023-01-01", DATA_FIM="2025-12-31",
+                         DATA_INMET_INICIO="2023-01-01", DATA_INMET_FIM="2025-12-31")
         codigo, liberar = self.fluxos[persistir]
         logs = io.StringIO()
         try:
@@ -133,8 +141,7 @@ class PersistenciaInmetTests(unittest.TestCase):
         invalida[0]["codigo_estacao"] = None
         casos.append((invalida, "chave inválida"))
         casos.append((self.inmet + [self.inmet[0]], "duplicidades"))
-        casos.append((self.inmet[1:], "diferente de 2023"))
-        casos.append(([self.inmet[0], self.inmet[2]], "sem correspondência estação + dia"))
+        casos.append((self.inmet[1:], "janela técnica"))
         incompleta = copy.deepcopy(self.inmet)
         incompleta[0]["qtd_observacoes"] = 23
         casos.append((incompleta, "diferente de 24"))

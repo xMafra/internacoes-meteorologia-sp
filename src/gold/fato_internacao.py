@@ -1,4 +1,8 @@
 from time import perf_counter
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
@@ -14,8 +18,14 @@ from pyspark.sql.functions import (
     substring,
     lit,
     coalesce,
+    year,
+    month,
     sum as spark_sum,
 )
+
+from src.common.spark_io import destino_parquet_atomico
+from src.common.sih_io import ler_silver_sih
+from src.common.study_period import DATA_FIM, DATA_INICIO
 
 
 # ==============================================================
@@ -61,11 +71,7 @@ print("=" * 70)
 
 print("\nLendo Silver SIH...")
 
-df_sih = (
-    spark.read
-    .option("recursiveFileLookup", "true")
-    .parquet(SILVER_SIH)
-)
+df_sih = ler_silver_sih(spark, SILVER_SIH)
 
 total_silver_sih = df_sih.count()
 
@@ -79,7 +85,7 @@ print(
 # 2. FILTRO TEMPORAL
 # ==============================================================
 
-print("\nFiltrando período 2023–2025...")
+print(f"\nFiltrando data real de internação: {DATA_INICIO} a {DATA_FIM}...")
 
 df_sih = (
     df_sih
@@ -88,21 +94,21 @@ df_sih = (
         col("ANO_CMPT").cast("int")
     )
     .filter(
-        col("ANO_CMPT").between(2023, 2025)
+        col("DT_INTER").between(DATA_INICIO, DATA_FIM)
     )
 )
 
 total_sih = df_sih.count()
 
 print(
-    f"Internações no período 2023–2025: "
+    f"Internações no período analítico: "
     f"{total_sih}"
 )
 
 
 if total_sih == 0:
     raise ValueError(
-        "Nenhum registro encontrado no período 2023–2025."
+        f"Nenhum registro encontrado entre {DATA_INICIO} e {DATA_FIM}."
     )
 
 
@@ -347,21 +353,20 @@ print(
 
 df_municipio_estacao = (
     spark.read
-    .option(
-        "recursiveFileLookup",
-        "true"
-    )
     .parquet(
         GOLD_MUNICIPIO_ESTACAO
     )
 
     .select(
         "CD_MUN",
+        col("ano").cast("int").alias("ano_estacao"),
         "codigo_estacao",
         "estacao",
         "latitude_estacao",
         "longitude_estacao",
         "distancia_km",
+        "cobertura_temperatura_pct",
+        "criterio_selecao",
     )
 
     .withColumn(
@@ -385,7 +390,7 @@ df_municipio_estacao = (
     )
 
     .dropDuplicates(
-        ["CD_MUN_JOIN"]
+        ["CD_MUN_JOIN", "ano_estacao"]
     )
 )
 
@@ -413,7 +418,7 @@ df_ibge_sem_estacao = (
     .join(
         df_municipio_estacao.select(
             "CD_MUN_JOIN"
-        ),
+        ).distinct(),
         "CD_MUN_JOIN",
         "left_anti"
     )
@@ -532,7 +537,7 @@ print(
 
 
 # --------------------------------------------------------------
-# Alguns códigos presentes na SIH 2023–2025 não existem
+# Alguns códigos presentes na SIH podem não existir
 # na versão histórica da CID-10 disponibilizada pelo DATASUS
 # utilizada na Bronze/Silver.
 #
@@ -980,8 +985,8 @@ df_gold = (
     df_gold.alias("base")
     .join(
         df_estacao_join.alias("est"),
-        col("base.CD_MUN_JOIN")
-        == col("est.EST_CD_MUN_JOIN"),
+        (col("base.CD_MUN_JOIN") == col("est.EST_CD_MUN_JOIN"))
+        & (year(col("base.DT_INTER")) == col("est.ano_estacao")),
         "left"
     )
     .select(
@@ -990,7 +995,9 @@ df_gold = (
         col("est.estacao").alias("estacao"),
         col("est.latitude_estacao").alias("latitude_estacao"),
         col("est.longitude_estacao").alias("longitude_estacao"),
-        col("est.distancia_km").alias("distancia_km")
+        col("est.distancia_km").alias("distancia_km"),
+        col("est.cobertura_temperatura_pct").alias("cobertura_temperatura_pct"),
+        col("est.criterio_selecao").alias("criterio_selecao_estacao")
     )
 )
 
@@ -1418,13 +1425,17 @@ df_gold = df_gold.select(
     # TEMPO
     # ----------------------------------------------------------
 
-    col("base.ANO_CMPT").alias(
+    year(col("base.DT_INTER")).alias(
         "ano"
     ),
 
-    col("base.MES_CMPT").alias(
+    month(col("base.DT_INTER")).alias(
         "mes"
     ),
+
+    col("base.ANO_CMPT").alias("ano_competencia"),
+
+    col("base.MES_CMPT").alias("mes_competencia"),
 
     col("base.DT_INTER").alias(
         "data_internacao"
@@ -1467,6 +1478,10 @@ df_gold = df_gold.select(
     col("base.longitude_estacao"),
 
     col("base.distancia_km"),
+
+    col("base.cobertura_temperatura_pct"),
+
+    col("base.criterio_selecao_estacao"),
 
 
     # ----------------------------------------------------------
@@ -1899,14 +1914,15 @@ print(
 )
 
 
-(
-    df_gold
-    .write
-    .mode("overwrite")
-    .parquet(
-        GOLD_OUTPUT
+with destino_parquet_atomico(GOLD_OUTPUT) as caminho_staging:
+    (
+        df_gold
+        .write
+        .mode("overwrite")
+        .parquet(
+            caminho_staging
+        )
     )
-)
 
 
 # ==============================================================
@@ -1919,7 +1935,7 @@ print("=" * 70)
 
 
 print(
-    "Período: 2023–2025"
+    f"Período analítico: {DATA_INICIO} a {DATA_FIM}"
 )
 
 

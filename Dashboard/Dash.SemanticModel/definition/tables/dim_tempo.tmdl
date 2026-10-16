@@ -112,6 +112,15 @@ table dim_tempo
 
 		annotation SummarizationSetBy = Automatic
 
+	column dia_ano
+		dataType: int64
+		formatString: 0
+		lineageTag: f4ed1ff8-7b30-4d63-8b4a-e9b4cf139126
+		summarizeBy: sum
+		sourceColumn: dia_ano
+
+		annotation SummarizationSetBy = Automatic
+
 	partition dim_tempo = m
 		mode: import
 		source =
@@ -119,9 +128,9 @@ table dim_tempo
 				    Fonte = Folder.Files("C:\Users\Guilherme\Desktop\TCC\data\consumption\dim_tempo"),
 				    #"Linhas Filtradas" = Table.SelectRows(Fonte, each ([Extension] = ".parquet")),
 				    #"Personalização Adicionada" = Table.AddColumn(#"Linhas Filtradas", "Dados", each Parquet.Document([Content])),
-				    #"Dados Expandido" = Table.ExpandTableColumn(#"Personalização Adicionada", "Dados", {"data", "data_id", "ano", "mes", "nome_mes", "ano_mes", "trimestre", "dia_mes", "dia_semana_numero", "dia_semana_nome", "fim_de_semana"}, {"data", "data_id", "ano", "mes", "nome_mes", "ano_mes", "trimestre", "dia_mes", "dia_semana_numero", "dia_semana_nome", "fim_de_semana"}),
+				    #"Dados Expandido" = Table.ExpandTableColumn(#"Personalização Adicionada", "Dados", {"data", "data_id", "ano", "mes", "nome_mes", "ano_mes", "trimestre", "dia_mes", "dia_ano", "dia_semana_numero", "dia_semana_nome", "fim_de_semana"}, {"data", "data_id", "ano", "mes", "nome_mes", "ano_mes", "trimestre", "dia_mes", "dia_ano", "dia_semana_numero", "dia_semana_nome", "fim_de_semana"}),
 				    #"Colunas Removidas" = Table.RemoveColumns(#"Dados Expandido",{"Content", "Name", "Extension", "Date accessed", "Date modified", "Date created", "Attributes", "Folder Path"}),
-				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Colunas Removidas",{{"data", type date}, {"data_id", Int64.Type}, {"ano", Int64.Type}, {"mes", Int64.Type}, {"nome_mes", type text}, {"ano_mes", type text}, {"trimestre", Int64.Type}, {"dia_mes", Int64.Type}, {"dia_semana_numero", Int64.Type}, {"dia_semana_nome", type text}, {"fim_de_semana", type logical}})
+				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Colunas Removidas",{{"data", type date}, {"data_id", Int64.Type}, {"ano", Int64.Type}, {"mes", Int64.Type}, {"nome_mes", type text}, {"ano_mes", type text}, {"trimestre", Int64.Type}, {"dia_mes", Int64.Type}, {"dia_ano", Int64.Type}, {"dia_semana_numero", Int64.Type}, {"dia_semana_nome", type text}, {"fim_de_semana", type logical}})
 				in
 				    #"Tipo Alterado"
 
